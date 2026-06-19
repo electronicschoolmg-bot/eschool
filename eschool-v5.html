@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>المدرسة الإلكترونية | E-School</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script type="module">
+  // ===== FIREBASE SETUP =====
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiy20XiFV8l2jnxedKGfdXf5Xsa5hAXWg",
+    authDomain: "eschooladmin-68cf1.firebaseapp.com",
+    projectId: "eschooladmin-68cf1",
+    storageBucket: "eschooladmin-68cf1.firebasestorage.app",
+    messagingSenderId: "911349737171",
+    appId: "1:911349737171:web:bb4318de4fd9217b54d626"
+  };
+
+  const fbApp = initializeApp(firebaseConfig);
+  const fbDb = getFirestore(fbApp);
+  // single document holds the whole school database
+  const schoolDocRef = doc(fbDb, "eschool", "main");
+
+  // expose to the regular (non-module) script below
+  window.__firebase = { fbDb, schoolDocRef, getDoc, setDoc, onSnapshot };
+</script>
+<style>
+:root{
+  --bg:#0a1628;--bg2:#0d2444;--card:#0f1e35;--card2:#132340;
+  --accent:#1e90ff;--accent2:#00d4aa;--gold:#f5c518;--red:#ff4757;
+  --green:#2ed573;--text:#e8edf5;--muted:#8a9ab8;--border:#1a2e4a;
+  --purple:#7c3aed;--orange:#ff6b35;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;overflow-x:hidden;}
+
+/* TOPBAR */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+.ticker-wrap{display:flex;align-items:center;gap:6px;overflow:hidden;flex:1;}
+.t-label{background:var(--red);color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;white-space:nowrap;}
+.ticker-text{color:var(--muted);white-space:nowrap;animation:ticker 30s linear infinite;}
+@keyframes ticker{0%{transform:translateX(-100%);}100%{transform:translateX(100vw);}}
+.topbar-date{color:var(--accent2);white-space:nowrap;font-size:11px;}
+
+/* NAVBAR */
+nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(30,144,255,.15);}
+.logo{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff;box-shadow:0 0 12px rgba(30,144,255,.4);}
+.logo-ar{font-size:14px;font-weight:900;}
+.logo-en{font-size:9px;color:var(--accent);letter-spacing:2px;font-weight:700;}
+.nav-links{display:flex;list-style:none;gap:1px;}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:12px;font-weight:600;padding:6px 10px;border-radius:5px;transition:.2s;cursor:pointer;white-space:nowrap;}
+.nav-links a:hover,.nav-links a.active{color:#fff;background:rgba(30,144,255,.15);}
+.nav-links a.active{color:var(--accent);}
+.nav-right{display:flex;gap:6px;align-items:center;}
+.btn-admin{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.3);padding:6px 12px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;}
+.btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.dark-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
+
+/* HERO - compact */
+.hero{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 60%,var(--bg) 100%);padding:36px 16px 28px;text-align:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(30,144,255,.06) 0%,transparent 70%);pointer-events:none;}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(30,144,255,.12);border:1px solid rgba(30,144,255,.25);color:var(--accent);padding:4px 14px;border-radius:50px;font-size:11px;font-weight:700;margin-bottom:14px;}
+.hero h1{font-size:clamp(22px,4vw,40px);font-weight:900;line-height:1.3;margin-bottom:10px;}
+.hero h1 span{color:var(--accent);}
+.hero p{font-size:13px;color:var(--muted);max-width:500px;margin:0 auto 20px;line-height:1.7;}
+.hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(30,144,255,.35);}
+.btn-outline{background:transparent;color:var(--accent);border:2px solid var(--accent);padding:10px 22px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.hero-stats{display:flex;justify-content:center;gap:28px;margin-top:28px;flex-wrap:wrap;}
+.stat-num{font-size:24px;font-weight:900;color:#fff;}
+.stat-num em{color:var(--accent2);font-style:normal;}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* CLASS SELECTOR */
+.class-selector{background:var(--bg2);border-bottom:2px solid var(--border);padding:8px 16px;position:sticky;top:58px;z-index:150;transition:all .3s;}
+.class-selector-inner{max-width:1200px;margin:0 auto;}
+
+/* collapsed state - just one line showing selected class */
+.cs-collapsed{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.cs-selected-pill{display:flex;align-items:center;gap:6px;background:rgba(30,144,255,.15);border:1px solid rgba(30,144,255,.3);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--accent);}
+.cs-change-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:20px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.cs-change-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* expanded state */
+.cs-expanded{display:none;}
+.cs-expanded.open{display:block;padding-top:8px;}
+.cs-title{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.cs-levels{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.level-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
+.level-btn:hover{border-color:var(--accent);color:var(--accent);}
+.level-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.level-btn.level-primary.active{background:#7c3aed;border-color:#7c3aed;}
+.level-btn.level-middle.active{background:#0891b2;border-color:#0891b2;}
+.level-btn.level-secondary.active{background:#059669;border-color:#059669;}
+.cs-classes{display:flex;gap:5px;flex-wrap:wrap;}
+.class-btn{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
+.class-btn:hover{border-color:var(--accent);color:var(--accent);}
+.class-btn.active{background:rgba(30,144,255,.2);border-color:var(--accent);color:var(--accent);}
+.cs-no-selection{font-size:11px;color:var(--muted);padding:4px 0;}
+/* keep old vars for compat */
+.selected-class-bar{display:none;}
+.selected-class-name{font-size:13px;font-weight:800;color:var(--accent);}
+.clear-class{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Cairo',sans-serif;}
+
+/* SECTIONS */
+.sec{padding:31px 16px;max-width:1200px;margin:0 auto;}
+.sec-alt{background:var(--card);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.sec-alt .sec{padding:31px 16px;}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+.sec-hd-left{}
+.eyebrow{display:inline-block;color:var(--accent);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.sec-title{font-size:clamp(17px,3vw,24px);font-weight:900;color:#fff;}
+.sec-count{font-size:11px;color:var(--muted);background:var(--card2);padding:3px 10px;border-radius:20px;border:1px solid var(--border);}
+
+/* HOW */
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:13px;}
+.how-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px 13px;text-align:center;transition:.2s;position:relative;overflow:hidden;}
+.how-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));transform:scaleX(0);transition:.3s;}
+.how-card:hover{transform:translateY(-3px);border-color:var(--accent);}
+.how-card:hover::after{transform:scaleX(1);}
+.how-icon{width:48px;height:48px;background:rgba(30,144,255,.1);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 11px;}
+.how-card h3{font-size:13px;font-weight:800;color:#fff;margin-bottom:5px;}
+.how-card p{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* SUBJECTS */
+.subj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:11px;}
+.subj-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:15px 11px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.subj-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.subj-card.filtered-out{opacity:.25;filter:grayscale(1);}
+.subj-card.highlighted{border-color:var(--accent2);background:rgba(0,212,170,.08);}
+.subj-icon{font-size:26px;margin-bottom:7px;}
+.subj-name{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px;}
+.subj-count{font-size:11px;color:var(--accent2);}
+.subj-class-tag{font-size:9px;color:var(--muted);margin-top:3px;background:var(--border);padding:1px 6px;border-radius:3px;display:inline-block;}
+
+/* TOOLS */
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px;}
+.tool-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px;display:flex;align-items:flex-start;gap:13px;transition:.2s;}
+.tool-card:hover{border-color:var(--accent);}
+.tool-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.tool-info h4{font-size:14px;font-weight:800;color:#fff;margin-bottom:3px;}
+.tool-info p{font-size:12px;color:var(--muted);line-height:1.5;}
+.tool-badge{display:inline-block;background:rgba(0,212,170,.12);color:var(--accent2);font-size:10px;padding:2px 8px;border-radius:50px;margin-top:5px;font-weight:700;}
+
+/* SCHEDULE - clear, one class at a time */
+.sch-wrapper{overflow-x:auto;}
+.sch-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:11px;overflow:hidden;border:1px solid var(--border);min-width:480px;}
+.sch-table th{background:var(--bg2);padding:11px 12px;font-size:12px;font-weight:700;color:var(--accent);text-align:center;border-bottom:2px solid var(--accent);}
+.sch-table td{padding:11px 12px;font-size:12px;color:var(--text);text-align:center;border-bottom:1px solid var(--border);}
+.sch-table tr:hover td{background:rgba(30,144,255,.05);}
+.sch-table tr:last-child td{border-bottom:none;}
+.sch-table tr.row-hidden{display:none;}
+.tbadge{background:rgba(30,144,255,.1);color:var(--accent);padding:3px 9px;border-radius:4px;font-size:11px;font-weight:700;display:inline-block;}
+.sbadge{background:rgba(0,212,170,.1);color:var(--accent2);padding:3px 9px;border-radius:4px;font-size:11px;font-weight:600;display:inline-block;}
+.class-pill{font-size:10px;color:var(--muted);background:var(--border);padding:2px 7px;border-radius:3px;}
+.sch-empty{text-align:center;color:var(--muted);padding:28px;font-size:13px;}
+/* edit row in schedule */
+.sch-edit-btn{background:rgba(30,144,255,.12);color:var(--accent);border:1px solid rgba(30,144,255,.2);padding:3px 8px;border-radius:4px;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;}
+.sch-del-btn{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.2);padding:3px 8px;border-radius:4px;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;}
+
+/* EXAMS */
+.exam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:13px;}
+.exam-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px;transition:.2s;}
+.exam-card:hover{border-color:var(--gold);}
+.exam-card.row-hidden{display:none;}
+.exam-hd{display:flex;justify-content:space-between;align-items:start;margin-bottom:11px;}
+.exam-subj{font-size:14px;font-weight:800;color:#fff;}
+.badge-open{background:rgba(46,213,115,.12);color:var(--green);font-size:10px;padding:2px 8px;border-radius:50px;font-weight:700;}
+.badge-soon{background:rgba(245,197,24,.12);color:var(--gold);font-size:10px;padding:2px 8px;border-radius:50px;font-weight:700;}
+.badge-closed{background:rgba(255,71,87,.12);color:var(--red);font-size:10px;padding:2px 8px;border-radius:50px;font-weight:700;}
+.exam-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:13px;}
+.exam-row{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);}
+.btn-exam{width:100%;background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:9px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-exam.off{background:var(--border);color:var(--muted);cursor:not-allowed;}
+.exam-class-tag{font-size:10px;color:var(--muted);background:var(--border);padding:2px 9px;border-radius:3px;margin-bottom:9px;display:inline-block;}
+
+/* PAYMENTS */
+.pay-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:13px;}
+.pay-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:18px;transition:.2s;}
+.pay-card.urgent{border-color:rgba(255,71,87,.4);background:rgba(255,71,87,.03);}
+.pay-card:hover{transform:translateY(-2px);}
+.pay-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;}
+.pay-title{font-size:14px;font-weight:800;color:#fff;}
+.pay-amt{font-size:20px;font-weight:900;color:var(--gold);}
+.pay-amt small{font-size:12px;color:var(--muted);font-weight:400;}
+.pay-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:11px;}
+.pay-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);}
+.pay-row span:last-child{color:var(--text);}
+.deadline-bar{background:rgba(255,255,255,.05);border-radius:4px;height:5px;margin-bottom:11px;overflow:hidden;}
+.deadline-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--gold));}
+.deadline-fill.red{background:linear-gradient(90deg,var(--gold),var(--red));}
+.btn-pay{width:100%;background:linear-gradient(135deg,var(--gold),#e5a800);color:#000;border:none;padding:9px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
+.pay-note{font-size:11px;color:var(--muted);margin-bottom:9px;line-height:1.5;}
+
+/* NEWS */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:13px;}
+.news-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:.2s;cursor:pointer;}
+.news-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.news-thumb{height:88px;background:linear-gradient(135deg,var(--bg2),var(--card2));display:flex;align-items:center;justify-content:center;font-size:35px;border-bottom:1px solid var(--border);}
+.news-body{padding:13px;}
+.news-cat{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.news-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1.4;}
+.news-date{font-size:11px;color:var(--muted);}
+.news-content{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5;}
+.news-class-tag{font-size:9px;color:var(--purple);background:rgba(124,58,237,.15);padding:1px 7px;border-radius:3px;margin-bottom:6px;display:inline-block;}
+
+/* NOTIFICATIONS BANNER */
+.notif-banner{background:linear-gradient(135deg,rgba(245,197,24,.1),rgba(255,107,53,.1));border:1px solid rgba(245,197,24,.3);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.2s;}
+.notif-banner:hover{border-color:var(--gold);}
+.notif-icon{font-size:20px;flex-shrink:0;}
+.notif-text{flex:1;}
+.notif-title{font-size:12px;font-weight:800;color:var(--gold);margin-bottom:2px;}
+.notif-sub{font-size:11px;color:var(--muted);}
+.notif-arrow{color:var(--gold);font-size:14px;}
+
+/* ALERTS SECTION */
+.alerts-grid{display:flex;flex-direction:column;gap:8px;}
+.alert-card{border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;border:1px solid transparent;}
+.alert-card.alert-urgent{background:rgba(255,71,87,.08);border-color:rgba(255,71,87,.3);}
+.alert-card.alert-info{background:rgba(30,144,255,.08);border-color:rgba(30,144,255,.2);}
+.alert-card.alert-success{background:rgba(46,213,115,.08);border-color:rgba(46,213,115,.2);}
+.alert-card.alert-warning{background:rgba(245,197,24,.08);border-color:rgba(245,197,24,.2);}
+.alert-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.alert-content{flex:1;}
+.alert-title{font-size:12px;font-weight:800;color:#fff;margin-bottom:3px;}
+.alert-body{font-size:11px;color:var(--muted);line-height:1.5;}
+.alert-meta{display:flex;gap:8px;margin-top:5px;align-items:center;flex-wrap:wrap;}
+.alert-date{font-size:10px;color:var(--muted);}
+.alert-class-tag{font-size:9px;padding:1px 7px;border-radius:3px;font-weight:700;}
+.alert-class-tag.all{background:rgba(30,144,255,.2);color:var(--accent);}
+.alert-class-tag.specific{background:rgba(124,58,237,.2);color:#a78bfa;}
+
+/* CONTACT - compact */
+.cont-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.cont-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px 12px;text-align:center;transition:.2s;cursor:pointer;}
+.cont-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.cont-icon{font-size:24px;margin-bottom:8px;}
+.cont-card h4{font-size:12px;font-weight:800;color:#fff;margin-bottom:3px;}
+.cont-card p{font-size:10px;color:var(--muted);}
+.cont-link{display:inline-block;margin-top:8px;background:rgba(30,144,255,.12);color:var(--accent);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;}
+
+/* FOOTER */
+footer{background:var(--bg2);border-top:2px solid var(--accent);padding:28px 16px 16px;}
+.ft-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px;margin-bottom:20px;}
+.ft-brand p{font-size:12px;color:var(--muted);line-height:1.7;margin-top:10px;margin-bottom:14px;}
+.ft-socials{display:flex;gap:6px;}
+.soc{width:30px;height:30px;background:var(--card);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;}
+.soc:hover{border-color:var(--accent);}
+.ft-col h5{font-size:12px;font-weight:800;color:#fff;margin-bottom:10px;}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:6px;}
+.ft-col ul li a{text-decoration:none;color:var(--muted);font-size:11px;}
+.ft-col ul li a:hover{color:var(--accent);}
+.ft-bottom{max-width:1200px;margin:0 auto;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:10px;color:var(--muted);flex-wrap:wrap;gap:6px;}
+
+/* LIGHT MODE OVERRIDES */
+body.light .how-card h3,
+body.light .subj-name,
+body.light .tool-info h4,
+body.light .exam-subj,
+body.light .pay-title,
+body.light .news-title,
+body.light .alert-title,
+body.light .sec-title,
+body.light .admin-item-title,
+body.light .ft-col h5,
+body.light .logo-ar,
+body.light .cont-card h4{color:#1a202c!important;}
+body.light .hero{background:linear-gradient(135deg,#dde3ed 0%,#c8d3e8 60%,#dde3ed 100%)!important;}
+body.light .hero h1{color:#1a202c!important;}
+body.light .hero h1 span{color:#1565c0!important;}
+body.light .hero p{color:#4a5568!important;}
+body.light .stat-num{color:#1a202c!important;}
+body.light .sch-table td{color:#1a202c!important;}
+body.light .pay-row span:last-child{color:#1a202c!important;}
+body.light .ft-bottom{color:#4a5568!important;}
+
+/* PREVENT HORIZONTAL OVERFLOW / TILT */
+html,body{overflow-x:hidden;max-width:100vw;}
+.cs-levels,.cs-classes{overflow-x:hidden;}
+
+/* ADMIN PANEL */
+.admin-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;overflow-y:auto;}
+.admin-overlay.open{display:flex;align-items:flex-start;justify-content:center;padding:12px;}
+.admin-panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:860px;overflow:hidden;}
+.admin-header{background:var(--bg);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);}
+.admin-header h2{font-size:16px;font-weight:900;color:#fff;}
+.admin-header h2 span{color:var(--gold);}
+.admin-close{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.admin-tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);overflow-x:auto;}
+.admin-tab{padding:10px 14px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;border:none;background:none;white-space:nowrap;border-bottom:2px solid transparent;transition:.2s;}
+.admin-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.admin-body{padding:18px;max-height:75vh;overflow-y:auto;}
+.admin-section{display:none;}
+.admin-section.active{display:block;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+.form-group label{font-size:11px;font-weight:700;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);direction:rtl;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);}
+.form-group textarea{resize:vertical;min-height:70px;}
+.form-group select option{background:var(--card2);}
+.btn-save{background:linear-gradient(135deg,var(--accent2),#00a882);color:#000;border:none;padding:9px 20px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:800;cursor:pointer;margin-top:6px;}
+.btn-del{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3);padding:5px 10px;border-radius:5px;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;}
+.admin-list{display:flex;flex-direction:column;gap:8px;margin-top:14px;}
+.admin-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.admin-item-info{flex:1;}
+.admin-item-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:2px;}
+.admin-item-sub{font-size:10px;color:var(--muted);}
+.admin-item-actions{display:flex;gap:6px;flex-shrink:0;}
+.sep{height:1px;background:var(--border);margin:14px 0;}
+.admin-note{background:rgba(30,144,255,.07);border:1px solid rgba(30,144,255,.18);border-radius:7px;padding:10px 14px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+.admin-note strong{color:var(--accent);}
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.stat-card .num{font-size:24px;font-weight:900;color:#fff;margin-bottom:2px;}
+.stat-card .lbl{font-size:10px;color:var(--muted);}
+.color-accent{color:var(--accent)!important;}
+.color-green{color:var(--green)!important;}
+.color-gold{color:var(--gold)!important;}
+.color-red{color:var(--red)!important;}
+.color-purple{color:#a78bfa!important;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:32px 20px;color:var(--muted);}
+.empty-state .e-icon{font-size:36px;margin-bottom:10px;}
+.empty-state p{font-size:13px;}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .nav-links{display:none;}
+  .ft-grid{grid-template-columns:1fr;gap:20px;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-group.full{grid-column:1;}
+}
+@media(max-width:480px){
+  .class-selector{top:54px;}
+  .hero-stats{gap:16px;}
+  .stat-num{font-size:20px;}
+}
+
+/* PULSE animation for alerts */
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.6;}}
+.pulse{animation:pulse 2s infinite;}
+
+/* SEARCH BAR */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 14px 9px 36px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--text);direction:rtl;}
+.search-input:focus{outline:none;border-color:var(--accent);}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="ticker-wrap">
+    <span class="t-label">🔴 عاجل</span>
+    <span class="ticker-text" id="tickerText">مرحباً بكم في المدرسة الإلكترونية E-School</span>
+  </div>
+  <span class="topbar-date" id="todayDate"></span>
+</div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="logo" onclick="goHome()">
+    <div class="logo-icon">ES</div>
+    <div>
+      <div class="logo-ar">المدرسة الإلكترونية</div>
+      <div class="logo-en">E-SCHOOL</div>
+    </div>
+  </div>
+  <ul class="nav-links">
+    <li><a onclick="scrollTo2('home')">🏠 الرئيسية</a></li>
+    <li><a onclick="scrollTo2('subjects')">📚 المواد</a></li>
+    <li><a onclick="scrollTo2('teachers')">👨‍🏫 المعلمون</a></li>
+    <li><a onclick="scrollTo2('schedule')">📅 الجدول</a></li>
+    <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
+    <li><a onclick="scrollTo2('alerts')">🔔 التنبيهات</a></li>
+    <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
+    <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
+    <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="dark-btn" onclick="toggleTheme()">🌙</button>
+    <button class="btn-admin" onclick="openAdmin()">⚙️ لوحة التحكم</button>
+    <button class="btn-join">🚀 التسجيل</button>
+  </div>
+</nav>
+
+<!-- CLASS SELECTOR (sticky, collapses after selection) -->
+<div class="class-selector" id="classSelector">
+  <div class="class-selector-inner">
+    <!-- collapsed row: shows selected class + change button -->
+    <div class="cs-collapsed" id="csCollapsed">
+      <div class="cs-selected-pill" id="csSelectedPill">🎓 اختر صفّك</div>
+      <button class="cs-change-btn" onclick="toggleCS()">⬇ تغيير الصف</button>
+    </div>
+    <!-- expanded panel -->
+    <div class="cs-expanded" id="csExpanded">
+      <div class="cs-title">🎓 اختر مرحلتك ثم صفّك:</div>
+      <div class="cs-levels" id="levelsRow"></div>
+      <div class="cs-classes" id="classesRow">
+        <span class="cs-no-selection">← اختر مرحلة أولاً</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="home">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🎓 التعليم الإلكتروني المتكامل</div>
+  <h1>تعلّم بلا حدود<br><span>من أي مكان في العالم</span></h1>
+  <p id="heroDesc">مدرسة إلكترونية متكاملة — دروس مباشرة، امتحانات إلكترونية، وتواصل مستمر</p>
+  <div class="hero-btns">
+    <button class="btn-primary" onclick="scrollTo2('classSelector')">🎯 اختر صفّك الآن</button>
+    <button class="btn-outline" onclick="scrollTo2('subjects')">📋 تصفح المواد</button>
+  </div>
+  <div class="hero-stats">
+    <div><div class="stat-num" id="statTeachers">٢٠<em>+</em></div><div class="stat-lbl">معلم متخصص</div></div>
+    <div><div class="stat-num" id="statClasses">١٢<em></em></div><div class="stat-lbl">فصل دراسي</div></div>
+    <div><div class="stat-num" id="statSubjects2">٨<em>+</em></div><div class="stat-lbl">مادة دراسية</div></div>
+    <div><div class="stat-num">١٠٠<em>%</em></div><div class="stat-lbl">عبر الإنترنت</div></div>
+  </div>
+</div>
+
+<!-- PUBLIC STATS DASHBOARD -->
+<div class="sec-alt">
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">لمحة سريعة</div><h2 class="sec-title">📊 مدرستنا بالأرقام</h2></div></div>
+    <div class="stat-cards" id="publicStatsGrid"></div>
+  </div>
+</div>
+
+<!-- HOW -->
+<div class="sec">
+  <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">كيف تعمل</div><h2 class="sec-title">أربع خطوات فقط</h2></div></div>
+  <div class="how-grid">
+    <div class="how-card"><div class="how-icon">📝</div><h3>١. سجّل حسابك</h3><p>سجّل بياناتك واحصل على رابط مجموعتك فوراً</p></div>
+    <div class="how-card"><div class="how-icon">🎯</div><h3>٢. اختر صفّك</h3><p>اختر مرحلتك وصفّك لترى محتواك فقط</p></div>
+    <div class="how-card"><div class="how-icon">🎥</div><h3>٣. احضر الدروس</h3><p>احضر مباشرة عبر Zoom أو Google Meet</p></div>
+    <div class="how-card"><div class="how-icon">✅</div><h3>٤. أدِّ الامتحان</h3><p>امتحانات إلكترونية مع نتيجة فورية</p></div>
+  </div>
+</div>
+
+<!-- SUBJECTS -->
+<div class="sec-alt" id="subjects">
+  <div class="sec">
+    <div class="sec-hd">
+      <div class="sec-hd-left"><div class="eyebrow">المواد الدراسية</div><h2 class="sec-title">مواد الصف المختار</h2></div>
+      <span class="sec-count" id="subjectsCount">الكل</span>
+    </div>
+    <div class="subj-grid" id="subjectsGrid">
+      <div class="empty-state"><div class="e-icon">📚</div><p>اختر صفّك أعلاه</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- TEACHERS -->
+<div class="sec" id="teachers">
+  <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">كادرنا التعليمي</div><h2 class="sec-title">تعرّف على معلمينا</h2></div></div>
+  <div class="tools-grid" id="teachersGrid"></div>
+</div>
+
+<!-- SCHEDULE -->
+<div class="sec-alt" id="schedule">
+  <div class="sec">
+    <div class="sec-hd">
+      <div class="sec-hd-left"><div class="eyebrow">الجدول الأسبوعي</div><h2 class="sec-title">مواعيد الدروس</h2></div>
+      <span class="sec-count" id="scheduleNote">UTC+3</span>
+    </div>
+    <div class="sch-wrapper">
+    <table class="sch-table">
+      <thead><tr><th>الصف</th><th>اليوم</th><th>الوقت</th><th>المادة</th><th>المعلم</th><th>المنصة</th><th>الرابط</th><th class="sch-admin-col" style="display:none">تعديل</th></tr></thead>
+      <tbody id="scheduleBody"></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- EXAMS -->
+<div class="sec" id="exams">
+  <div class="sec-hd">
+    <div class="sec-hd-left"><div class="eyebrow">الامتحانات</div><h2 class="sec-title">امتحانات الفصل</h2></div>
+    <span class="sec-count" id="examsCount">الكل</span>
+  </div>
+  <div class="exam-grid" id="examsGrid"></div>
+</div>
+
+<!-- ALERTS / NOTIFICATIONS -->
+<div class="sec-alt" id="alerts">
+  <div class="sec">
+    <div class="sec-hd">
+      <div class="sec-hd-left"><div class="eyebrow">التنبيهات والإشعارات</div><h2 class="sec-title">🔔 آخر التنبيهات</h2></div>
+      <span class="sec-count" id="alertsCount">الكل</span>
+    </div>
+    <div class="alerts-grid" id="alertsGrid"></div>
+  </div>
+</div>
+
+<!-- PAYMENTS -->
+<div class="sec" id="payments">
+  <div class="sec-hd">
+    <div class="sec-hd-left"><div class="eyebrow">الرسوم الدراسية</div><h2 class="sec-title">المدفوعات</h2></div>
+  </div>
+  <div class="pay-grid" id="paymentsGrid"></div>
+</div>
+
+<!-- NEWS -->
+<div class="sec-alt" id="news">
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">آخر الأخبار</div><h2 class="sec-title">إعلانات المدرسة</h2></div></div>
+    <div class="news-grid" id="newsGrid"></div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div class="sec" id="contact">
+  <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">تواصل معنا</div><h2 class="sec-title">نحن هنا</h2></div></div>
+  <div class="cont-grid" id="contactGrid"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-grid">
+    <div class="ft-brand">
+      <div class="logo"><div class="logo-icon">ES</div><div><div class="logo-ar">المدرسة الإلكترونية</div><div class="logo-en">E-SCHOOL</div></div></div>
+      <p id="footerDesc">مدرسة إلكترونية متكاملة تقدم تعليماً عالي الجودة لجميع المراحل الدراسية.</p>
+      <div class="ft-socials"><div class="soc">💬</div><div class="soc">📘</div><div class="soc">🎥</div><div class="soc">📸</div></div>
+    </div>
+    <div class="ft-col"><h5>روابط سريعة</h5><ul><li><a href="#">🏠 الرئيسية</a></li><li><a href="#">📚 المواد</a></li><li><a href="#">📝 الامتحانات</a></li><li><a href="#">💰 الرسوم</a></li><li><a href="#">📢 الأخبار</a></li></ul></div>
+    <div class="ft-col"><h5>معلومات</h5><ul><li><a href="#">🎓 عن المدرسة</a></li><li><a href="#">👨‍🏫 المعلمون</a></li><li><a href="#">📋 شروط الالتحاق</a></li><li><a href="#">📞 تواصل</a></li></ul></div>
+  </div>
+  <div class="ft-bottom"><span>© 2025 المدرسة الإلكترونية — E-School</span><span>صُنع بـ ❤️ للتعليم</span></div>
+</footer>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>⚙️ لوحة تحكم <span>المدير</span></h2>
+      <div class="admin-close" onclick="closeAdmin()">✕</div>
+    </div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="adminTab('dashboard')">📊 الإحصاء</button>
+      <button class="admin-tab" onclick="adminTab('subjects')">📚 المواد</button>
+      <button class="admin-tab" onclick="adminTab('teachers')">👨‍🏫 المعلمون</button>
+      <button class="admin-tab" onclick="adminTab('schedule')">📅 الجدول</button>
+      <button class="admin-tab" onclick="adminTab('exams')">📝 الامتحانات</button>
+      <button class="admin-tab" onclick="adminTab('alerts')">🔔 التنبيهات</button>
+      <button class="admin-tab" onclick="adminTab('payments')">💰 الرسوم</button>
+      <button class="admin-tab" onclick="adminTab('news')">📰 الأخبار</button>
+      <button class="admin-tab" onclick="adminTab('contact')">📞 التواصل</button>
+      <button class="admin-tab" onclick="adminTab('settings')">🔧 الإعدادات</button>
+    </div>
+    <div class="admin-body">
+
+      <!-- DASHBOARD -->
+      <div class="admin-section active" id="sec-dashboard">
+        <div class="stat-cards">
+          <div class="stat-card"><div class="num color-accent" id="d-classes">0</div><div class="lbl">فصل دراسي</div></div>
+          <div class="stat-card"><div class="num color-green" id="d-subjects">0</div><div class="lbl">مادة</div></div>
+          <div class="stat-card"><div class="num color-gold" id="d-schedule">0</div><div class="lbl">حصة</div></div>
+          <div class="stat-card"><div class="num color-red" id="d-exams">0</div><div class="lbl">امتحان</div></div>
+          <div class="stat-card"><div class="num color-purple" id="d-alerts">0</div><div class="lbl">تنبيه</div></div>
+          <div class="stat-card"><div class="num color-accent" id="d-news">0</div><div class="lbl">خبر</div></div>
+        </div>
+        <div class="admin-note"><strong>مرحباً بك!</strong> كل تغيير تحفظه يظهر فوراً. البيانات محفوظة تلقائياً في المتصفح.</div>
+      </div>
+
+      <!-- CLASSES -->
+      <div class="admin-section" id="sec-classes">
+        <div class="admin-note"><strong>إدارة الصفوف والفصول الدراسية</strong> — 12 فصل: 6 ابتدائي + 3 إعدادي + 3 ثانوي</div>
+        <div class="form-grid">
+          <div class="form-group"><label>اسم الصف</label><input type="text" id="cl-name" placeholder="الصف الأول الابتدائي أ"></div>
+          <div class="form-group"><label>المرحلة</label>
+            <select id="cl-level">
+              <option value="primary">🟣 ابتدائي</option>
+              <option value="middle">🔵 إعدادي</option>
+              <option value="secondary">🟢 ثانوي</option>
+            </select>
+          </div>
+          <div class="form-group full"><label>وصف الصف (اختياري)</label><input type="text" id="cl-desc" placeholder="الصف الأول ابتدائي — الفترة الصباحية"></div>
+        </div>
+        <button class="btn-save" onclick="addClass()">➕ إضافة الصف</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="classes-list"></div>
+      </div>
+
+      <!-- SUBJECTS -->
+      <div class="admin-section" id="sec-subjects">
+        <div class="admin-note"><strong>إضافة مادة</strong> — حدّد الصف لتظهر فقط لطلاب ذلك الصف</div>
+        <div class="form-grid">
+          <div class="form-group"><label>اسم المادة</label><input type="text" id="s-name" placeholder="الرياضيات"></div>
+          <div class="form-group"><label>الإيموجي</label><input type="text" id="s-icon" placeholder="🔢" maxlength="2"></div>
+          <div class="form-group"><label>الصف</label><select id="s-class"></select></div>
+          <div class="form-group"><label>عدد الدروس</label><input type="number" id="s-lessons" placeholder="24"></div>
+          <div class="form-group"><label>المعلم</label><input type="text" id="s-teacher" placeholder="أ. محمد"></div>
+        </div>
+        <button class="btn-save" onclick="addSubject()">➕ إضافة المادة</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="subjects-list"></div>
+      </div>
+
+      <!-- TEACHERS -->
+      <div class="admin-section" id="sec-teachers">
+        <div class="admin-note"><strong>إضافة معلم</strong> — يظهر في قسم "تعرّف على معلمينا" العام للجميع كإعلان للمدرسة</div>
+        <div class="form-grid">
+          <div class="form-group"><label>اسم المعلم</label><input type="text" id="t-name" placeholder="أ. محمد أحمد"></div>
+          <div class="form-group"><label>المادة التي يدرّسها</label><input type="text" id="t-subject" placeholder="الرياضيات"></div>
+          <div class="form-group"><label>الإيموجي</label><input type="text" id="t-icon" placeholder="👨‍🏫" maxlength="2"></div>
+          <div class="form-group full"><label>نبذة قصيرة</label><input type="text" id="t-bio" placeholder="خبرة 8 سنوات في تدريس الرياضيات"></div>
+        </div>
+        <button class="btn-save" onclick="addTeacher()">➕ إضافة المعلم</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="teachers-list"></div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="admin-section" id="sec-schedule">
+        <div class="admin-note"><strong>إضافة حصة للجدول</strong> — حدّد الصف ليظهر فقط في فلتر ذلك الصف</div>
+        <div class="form-grid">
+          <div class="form-group"><label>الصف</label><select id="sc-class"></select></div>
+          <div class="form-group"><label>اليوم</label>
+            <select id="sc-day"><option>السبت</option><option>الأحد</option><option>الاثنين</option><option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option></select>
+          </div>
+          <div class="form-group"><label>الوقت</label><input type="text" id="sc-time" placeholder="٤:٠٠ م"></div>
+          <div class="form-group"><label>المادة</label><input type="text" id="sc-subject" placeholder="الرياضيات"></div>
+          <div class="form-group"><label>المعلم</label><input type="text" id="sc-teacher" placeholder="أ. محمد"></div>
+          <div class="form-group"><label>المنصة</label>
+            <select id="sc-platform"><option value="📹 Zoom">Zoom</option><option value="🎯 Google Meet">Google Meet</option><option value="💬 WhatsApp">WhatsApp</option></select>
+          </div>
+          <div class="form-group full"><label>رابط الدرس</label><input type="text" id="sc-link" placeholder="https://zoom.us/j/..."></div>
+        </div>
+        <button class="btn-save" onclick="addSchedule()">➕ إضافة للجدول</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="schedule-list"></div>
+      </div>
+
+      <!-- EXAMS -->
+      <div class="admin-section" id="sec-exams">
+        <div class="admin-note"><strong>إضافة امتحان</strong> — يظهر فقط لطلاب الصف المحدد</div>
+        <div class="form-grid">
+          <div class="form-group"><label>الصف</label><select id="ex-class"></select></div>
+          <div class="form-group"><label>اسم المادة</label><input type="text" id="ex-subject" placeholder="الرياضيات"></div>
+          <div class="form-group"><label>الإيموجي</label><input type="text" id="ex-icon" placeholder="🔢" maxlength="2"></div>
+          <div class="form-group"><label>المدة (دقيقة)</label><input type="number" id="ex-duration" placeholder="60"></div>
+          <div class="form-group"><label>عدد الأسئلة</label><input type="number" id="ex-questions" placeholder="30"></div>
+          <div class="form-group"><label>تاريخ البداية</label><input type="date" id="ex-start"></div>
+          <div class="form-group"><label>تاريخ الانتهاء</label><input type="date" id="ex-end"></div>
+          <div class="form-group full"><label>رابط Google Forms</label><input type="text" id="ex-link" placeholder="https://forms.google.com/..."></div>
+        </div>
+        <button class="btn-save" onclick="addExam()">➕ إضافة الامتحان</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="exams-list"></div>
+      </div>
+
+      <!-- ALERTS -->
+      <div class="admin-section" id="sec-alerts">
+        <div class="admin-note"><strong>إضافة تنبيه أو إشعار</strong> — يمكن إرساله لكل الصفوف أو لصف محدد فقط</div>
+        <div class="form-grid">
+          <div class="form-group"><label>عنوان التنبيه</label><input type="text" id="al-title" placeholder="تذكير بموعد الامتحان"></div>
+          <div class="form-group"><label>نوع التنبيه</label>
+            <select id="al-type">
+              <option value="alert-urgent">🔴 عاجل</option>
+              <option value="alert-warning">🟡 تحذير / تذكير</option>
+              <option value="alert-info">🔵 معلومة</option>
+              <option value="alert-success">🟢 إعلان إيجابي</option>
+            </select>
+          </div>
+          <div class="form-group"><label>الإيموجي</label><input type="text" id="al-icon" placeholder="🔔" maxlength="2"></div>
+          <div class="form-group"><label>الصف المستهدف</label><select id="al-class"></select></div>
+          <div class="form-group"><label>التاريخ</label><input type="date" id="al-date"></div>
+          <div class="form-group"><label>موعد منتهى (اختياري)</label><input type="date" id="al-deadline"></div>
+          <div class="form-group full"><label>نص التنبيه</label><textarea id="al-body" placeholder="اكتب تفاصيل التنبيه هنا..."></textarea></div>
+        </div>
+        <button class="btn-save" onclick="addAlert()">🔔 نشر التنبيه</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="alerts-list"></div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="admin-section" id="sec-payments">
+        <div class="admin-note"><strong>إضافة رسوم أو دفعة مالية</strong></div>
+        <div class="form-grid">
+          <div class="form-group"><label>عنوان الرسوم</label><input type="text" id="py-title" placeholder="رسوم الفصل الأول"></div>
+          <div class="form-group"><label>المبلغ</label><input type="text" id="py-amount" placeholder="50"></div>
+          <div class="form-group"><label>العملة</label><input type="text" id="py-currency" placeholder="دولار"></div>
+          <div class="form-group"><label>الموعد النهائي</label><input type="date" id="py-deadline"></div>
+          <div class="form-group"><label>طريقة الدفع</label><input type="text" id="py-method" placeholder="واتساب / تحويل"></div>
+          <div class="form-group"><label>عاجل؟</label><select id="py-urgent"><option value="false">لا</option><option value="true">نعم</option></select></div>
+          <div class="form-group full"><label>ملاحظات</label><textarea id="py-note" placeholder="يرجى الدفع قبل الموعد..."></textarea></div>
+        </div>
+        <button class="btn-save" onclick="addPayment()">➕ إضافة</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="payments-list"></div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="admin-section" id="sec-news">
+        <div class="admin-note"><strong>نشر خبر أو إعلان</strong></div>
+        <div class="form-grid">
+          <div class="form-group"><label>عنوان الخبر</label><input type="text" id="n-title" placeholder="إعلان مهم"></div>
+          <div class="form-group"><label>الفئة</label>
+            <select id="n-cat"><option>إعلان مهم</option><option>امتحانات</option><option>رسوم دراسية</option><option>جدول دراسي</option><option>إنجازات</option><option>إجازات</option><option>تحديث مناهج</option><option>أخرى</option></select>
+          </div>
+          <div class="form-group"><label>الإيموجي</label><input type="text" id="n-icon" placeholder="📢" maxlength="2"></div>
+          <div class="form-group"><label>التاريخ</label><input type="date" id="n-date"></div>
+          <div class="form-group full"><label>محتوى الخبر</label><textarea id="n-content" placeholder="تفاصيل الخبر..."></textarea></div>
+        </div>
+        <button class="btn-save" onclick="addNews()">📢 نشر</button>
+        <div class="sep"></div>
+        <div class="admin-list" id="news-list"></div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="admin-section" id="sec-contact">
+        <div class="admin-note"><strong>تحديث معلومات التواصل</strong></div>
+        <div class="form-grid">
+          <div class="form-group"><label>رقم واتساب</label><input type="text" id="c-whatsapp" placeholder="+249xxxxxxxxx"></div>
+          <div class="form-group"><label>البريد الإلكتروني</label><input type="text" id="c-email" placeholder="info@eschool.com"></div>
+          <div class="form-group"><label>رابط التسجيل</label><input type="text" id="c-register" placeholder="https://forms.google.com/..."></div>
+          <div class="form-group"><label>قناة يوتيوب</label><input type="text" id="c-youtube" placeholder="https://youtube.com/..."></div>
+          <div class="form-group"><label>فيسبوك</label><input type="text" id="c-facebook" placeholder="https://facebook.com/..."></div>
+          <div class="form-group"><label>تيليغرام</label><input type="text" id="c-telegram" placeholder="https://t.me/..."></div>
+        </div>
+        <button class="btn-save" onclick="saveContact()">💾 حفظ</button>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="admin-section" id="sec-settings">
+        <div class="admin-note"><strong>الإعدادات العامة</strong></div>
+        <div class="form-grid">
+          <div class="form-group"><label>اسم المدرسة</label><input type="text" id="set-name" placeholder="المدرسة الإلكترونية"></div>
+          <div class="form-group"><label>الاختصار</label><input type="text" id="set-abbr" placeholder="ES" maxlength="3"></div>
+          <div class="form-group"><label>عدد الطلاب</label><input type="number" id="set-students" placeholder="500"></div>
+          <div class="form-group"><label>عدد المعلمين</label><input type="number" id="set-teachers" placeholder="20"></div>
+          <div class="form-group full"><label>شريط الأخبار العاجلة</label><input type="text" id="set-ticker" placeholder="مرحباً بكم..."></div>
+          <div class="form-group full"><label>وصف المدرسة</label><textarea id="set-desc" placeholder="مدرسة إلكترونية..."></textarea></div>
+          <div class="form-group full"><label>ملاحظة الجدول (توقيت)</label><input type="text" id="set-schednote" placeholder="UTC+3"></div>
+        </div>
+        <button class="btn-save" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        <div class="sep"></div>
+        <button class="btn-del" onclick="if(confirm('مسح كل البيانات؟'))clearAll()">🗑️ مسح كل البيانات</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DB =====
+let DB = {
+  ticker:'مرحباً بكم في المدرسة الإلكترونية E-School — التسجيل مفتوح — اختر صفّك الآن',
+  classes:[
+    {id:1,name:'الصف الأول الابتدائي',level:'primary',desc:''},
+    {id:2,name:'الصف الثاني الابتدائي',level:'primary',desc:''},
+    {id:3,name:'الصف الثالث الابتدائي',level:'primary',desc:''},
+    {id:4,name:'الصف الرابع الابتدائي',level:'primary',desc:''},
+    {id:5,name:'الصف الخامس الابتدائي',level:'primary',desc:''},
+    {id:6,name:'الصف السادس الابتدائي',level:'primary',desc:''},
+    {id:7,name:'الصف الأول الإعدادي',level:'middle',desc:''},
+    {id:8,name:'الصف الثاني الإعدادي',level:'middle',desc:''},
+    {id:9,name:'الصف الثالث الإعدادي',level:'middle',desc:''},
+    {id:10,name:'الصف الأول الثانوي',level:'secondary',desc:''},
+    {id:11,name:'الصف الثاني الثانوي',level:'secondary',desc:''},
+    {id:12,name:'الصف الثالث الثانوي',level:'secondary',desc:''}
+  ],
+  subjects:[
+    {id:1,name:'الرياضيات',icon:'🔢',classId:1,lessons:24,teacher:'أ. محمد',link:'#'},
+    {id:2,name:'العلوم',icon:'🧪',classId:1,lessons:18,teacher:'أ. أحمد',link:'#'},
+    {id:3,name:'اللغة العربية',icon:'📖',classId:1,lessons:20,teacher:'أ. فاطمة',link:'#'},
+    {id:4,name:'الرياضيات',icon:'🔢',classId:7,lessons:30,teacher:'أ. عمر',link:'#'},
+    {id:5,name:'الفيزياء',icon:'⚡',classId:10,lessons:28,teacher:'أ. خالد',link:'#'},
+    {id:6,name:'الكيمياء',icon:'🧬',classId:10,lessons:26,teacher:'أ. سارة',link:'#'},
+  ],
+  schedule:[
+    {id:1,classId:1,day:'السبت',time:'٤:٠٠ م',subject:'الرياضيات',teacher:'أ. محمد',platform:'📹 Zoom',link:'#'},
+    {id:2,classId:1,day:'الأحد',time:'٤:٠٠ م',subject:'العلوم',teacher:'أ. أحمد',platform:'🎯 Google Meet',link:'#'},
+    {id:3,classId:7,day:'السبت',time:'٥:٠٠ م',subject:'الرياضيات',teacher:'أ. عمر',platform:'📹 Zoom',link:'#'},
+    {id:4,classId:10,day:'الأحد',time:'٦:٠٠ م',subject:'الفيزياء',teacher:'أ. خالد',platform:'📹 Zoom',link:'#'},
+  ],
+  exams:[
+    {id:1,classId:1,subject:'الرياضيات',icon:'🔢',duration:60,questions:30,start:'2025-01-15',end:'2025-01-30',link:'#'},
+    {id:2,classId:7,subject:'الرياضيات',icon:'🔢',duration:90,questions:40,start:'2025-01-18',end:'2025-02-02',link:'#'},
+    {id:3,classId:10,subject:'الفيزياء',icon:'⚡',duration:90,questions:35,start:'2025-02-05',end:'2025-02-15',link:'#'},
+  ],
+  alerts:[
+    {id:1,title:'تذكير بموعد دفع الرسوم',type:'alert-warning',icon:'💰',classId:0,date:'2025-01-10',deadline:'2025-01-31',body:'يرجى من جميع الطلاب دفع رسوم الفصل الأول قبل نهاية يناير لتجنب الحرمان من الامتحانات.'},
+    {id:2,title:'امتحان الرياضيات الأسبوع القادم',type:'alert-urgent',icon:'📝',classId:1,date:'2025-01-12',deadline:'2025-01-15',body:'تذكير لطلاب الصف الأول الابتدائي: امتحان الرياضيات يوم الأربعاء القادم الساعة 4 مساءً.'},
+    {id:3,title:'إجازة رسمية يوم الخميس',type:'alert-info',icon:'🏖️',classId:0,date:'2025-01-13',deadline:'',body:'تعلم إدارة المدرسة بأن يوم الخميس إجازة رسمية ولن تكون هناك دروس.'},
+  ],
+  payments:[
+    {id:1,title:'رسوم الفصل الأول',amount:'50',currency:'دولار',deadline:'2025-01-31',method:'واتساب / تحويل بنكي',urgent:false,note:'يرجى الدفع قبل الموعد المحدد'},
+    {id:2,title:'رسوم الأنشطة',amount:'15',currency:'دولار',deadline:'2025-02-10',method:'واتساب',urgent:false,note:'اختياري للراغبين'}
+  ],
+  news:[
+    {id:1,title:'فتح باب التسجيل للفصل الثاني',cat:'إعلان مهم',icon:'🎉',date:'2025-01-15',content:'يسعد الإدارة الإعلان عن فتح باب التسجيل للفصل الثاني. يرجى التسجيل قبل نهاية الشهر.'},
+    {id:2,title:'تكريم أوائل الفصل الأول',cat:'إنجازات',icon:'🏆',date:'2025-01-05',content:'تهنئ إدارة المدرسة أوائل الطلاب على تفوقهم وتتمنى لهم المزيد.'}
+  ],
+  contact:{whatsapp:'#',email:'info@eschool.com',register:'#',youtube:'#',facebook:'#',telegram:'#'},
+  teachers:[
+    {id:1,name:'أ. محمد أحمد',subject:'الرياضيات',icon:'🔢',bio:'خبرة 8 سنوات في تدريس الرياضيات لجميع المراحل'},
+    {id:2,name:'أ. فاطمة علي',subject:'اللغة العربية',icon:'📖',bio:'متخصصة في تعليم اللغة العربية وآدابها'},
+    {id:3,name:'أ. خالد إبراهيم',subject:'الفيزياء',icon:'⚡',bio:'معلم فيزياء للمرحلة الثانوية بخبرة واسعة'}
+  ],
+  settings:{name:'المدرسة الإلكترونية',abbr:'ES',students:'500',teachers:'20',desc:'مدرسة إلكترونية متكاملة تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
+};
+
+let selectedClassId = null;
+let selectedLevel = null;
+
+// ===== CLOUD SAVE / LOAD (Firestore) =====
+let fbReady = false;
+let saveTimer = null;
+let suppressNextSnapshot = false; // avoid re-render loop right after our own save
+
+function save(){
+  // local fallback so admin's own browser never loses unsaved edits if offline
+  try{localStorage.setItem('eschool_v2_backup',JSON.stringify(DB));}catch(e){}
+  if(!window.__firebase) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      suppressNextSnapshot = true;
+      await window.__firebase.setDoc(window.__firebase.schoolDocRef, DB);
+      showSyncBadge('✅ تم الحفظ على الإنترنت');
+    }catch(e){
+      showSyncBadge('⚠️ تعذّر الحفظ — تحقق من الإنترنت');
+      console.error(e);
+    }
+  }, 400); // debounce rapid edits
+}
+
+function load(){
+  // show local backup instantly while cloud data loads (no blank screen)
+  try{const d=localStorage.getItem('eschool_v2_backup');if(d)DB=JSON.parse(d);}catch(e){}
+}
+
+function initCloudSync(){
+  if(!window.__firebase){ setTimeout(initCloudSync,300); return; }
+  const { getDoc, onSnapshot, schoolDocRef, setDoc } = window.__firebase;
+
+  // live listener — fires on first load AND whenever ANY admin updates the data
+  onSnapshot(schoolDocRef, (snap)=>{
+    if(suppressNextSnapshot){ suppressNextSnapshot=false; return; }
+    if(snap.exists()){
+      DB = snap.data();
+      render();
+      fbReady = true;
+      showSyncBadge('🔄 تحديث جديد وصل');
+    } else if(!fbReady){
+      // first time ever — push our default DB to the cloud so it exists
+      setDoc(schoolDocRef, DB).then(()=>{fbReady=true;});
+    }
+  }, (err)=>{
+    console.error('Firestore listener error:', err);
+    showSyncBadge('⚠️ غير متصل — يعرض آخر نسخة محفوظة');
+  });
+}
+
+function showSyncBadge(msg){
+  let b=document.getElementById('syncBadge');
+  if(!b){
+    b=document.createElement('div');
+    b.id='syncBadge';
+    b.style.cssText='position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);color:var(--text);padding:7px 16px;border-radius:20px;font-size:11px;font-weight:700;z-index:3000;box-shadow:0 4px 14px rgba(0,0,0,.3);transition:opacity .3s;';
+    document.body.appendChild(b);
+  }
+  b.textContent=msg;
+  b.style.opacity='1';
+  clearTimeout(b._t);
+  b._t=setTimeout(()=>{b.style.opacity='0';},2500);
+}
+function nextId(arr){return arr.length?Math.max(...arr.map(i=>i.id))+1:1;}
+
+const levelNames={primary:'ابتدائي',middle:'إعدادي',secondary:'ثانوي'};
+const levelColors={primary:'#7c3aed',middle:'#0891b2',secondary:'#059669'};
+
+function getClassName(id){
+  if(id===0)return'جميع الصفوف';
+  const c=DB.classes.find(c=>c.id===id);
+  return c?c.name:'—';
+}
+
+let csOpen = true; // starts open until user picks a class
+
+function toggleCS(){
+  csOpen = !csOpen;
+  document.getElementById('csExpanded').classList.toggle('open', csOpen);
+  document.querySelector('.cs-change-btn').textContent = csOpen ? '⬆ إخفاء' : '⬇ تغيير الصف';
+}
+
+function renderClassSelector(){
+  const levels=[...new Set(DB.classes.map(c=>c.level))];
+  const levelsRow=document.getElementById('levelsRow');
+  levelsRow.innerHTML='<button class="level-btn '+(selectedLevel===null?'active':'')+'" onclick="filterLevel(null)">🌐 الكل</button>';
+  levels.forEach(lv=>{
+    const btn=document.createElement('button');
+    btn.className='level-btn level-'+lv+(selectedLevel===lv?' active':'');
+    btn.textContent={primary:'🟣 ابتدائي',middle:'🔵 إعدادي',secondary:'🟢 ثانوي'}[lv]||lv;
+    btn.onclick=()=>filterLevel(lv);
+    levelsRow.appendChild(btn);
+  });
+  renderClassButtons();
+  // update collapsed pill
+  const pill = document.getElementById('csSelectedPill');
+  if(selectedClassId!==null){
+    pill.textContent='📚 '+getClassName(selectedClassId);
+    // collapse after selection
+    csOpen=false;
+    document.getElementById('csExpanded').classList.remove('open');
+    document.querySelector('.cs-change-btn').textContent='⬇ تغيير الصف';
+  } else if(selectedLevel!==null){
+    pill.textContent='🎓 '+{primary:'ابتدائي',middle:'إعدادي',secondary:'ثانوي'}[selectedLevel]+' — اختر الصف';
+  } else {
+    pill.textContent='🎓 اختر صفّك';
+    csOpen=true;
+    document.getElementById('csExpanded').classList.add('open');
+    document.querySelector('.cs-change-btn').textContent='⬆ إخفاء';
+  }
+}
+
+function renderClassButtons(){
+  const classesRow=document.getElementById('classesRow');
+  const filtered=selectedLevel?DB.classes.filter(c=>c.level===selectedLevel):DB.classes;
+  if(!filtered.length){classesRow.innerHTML='<span class="cs-no-selection">← اختر مرحلة أولاً</span>';return;}
+  classesRow.innerHTML='';
+  // add "all in level" button
+  if(selectedLevel){
+    const allBtn=document.createElement('button');
+    allBtn.className='class-btn'+(selectedClassId===null?' active':'');
+    allBtn.textContent='الكل';
+    allBtn.onclick=()=>filterClass(null);
+    classesRow.appendChild(allBtn);
+  }
+  filtered.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='class-btn'+(selectedClassId===c.id?' active':'');
+    btn.textContent=c.name;
+    btn.onclick=()=>filterClass(c.id);
+    classesRow.appendChild(btn);
+  });
+}
+
+function filterLevel(lv){
+  selectedLevel=lv;
+  if(lv===null) selectedClassId=null;
+  else {
+    // if current selectedClass not in this level, reset it
+    if(selectedClassId!==null){
+      const c=DB.classes.find(x=>x.id===selectedClassId);
+      if(c&&c.level!==lv) selectedClassId=null;
+    }
+  }
+  renderClassSelector();
+  applyFilters();
+}
+
+function filterClass(id){
+  selectedClassId=id; // null = all in level
+  renderClassSelector();
+  applyFilters();
+}
+
+function clearClassFilter(){
+  selectedClassId=null;
+  selectedLevel=null;
+  csOpen=true;
+  document.getElementById('csExpanded').classList.add('open');
+  document.querySelector('.cs-change-btn').textContent='⬆ إخفاء';
+  renderClassSelector();
+  applyFilters();
+}
+
+function applyFilters(){
+  renderSubjects();
+  renderSchedule();
+  renderExams();
+  renderAlerts();
+}
+
+// ===== RENDER FUNCTIONS =====
+function render(){
+  renderClassSelector();
+  renderSubjects();
+  renderSchedule();
+  renderExams();
+  renderAlerts();
+  renderPayments();
+  renderNews();
+  renderContact();
+  renderTeachers();
+  renderPublicStats();
+  renderSettings();
+  renderAdminLists();
+  updateDashboard();
+  populateClassSelects();
+  document.getElementById('tickerText').textContent=DB.ticker;
+}
+
+function renderTeachers(){
+  const g=document.getElementById('teachersGrid');
+  if(!g) return;
+  if(!DB.teachers||!DB.teachers.length){
+    g.innerHTML='<div class="empty-state"><div class="e-icon">👨‍🏫</div><p>سيتم إضافة المعلمين قريباً</p></div>';
+    return;
+  }
+  g.innerHTML=DB.teachers.map(t=>`
+    <div class="tool-card">
+      <div class="tool-logo" style="background:rgba(30,144,255,.1);font-size:24px;">${t.icon||'👨‍🏫'}</div>
+      <div class="tool-info">
+        <h4>${t.name}</h4>
+        <p>${t.bio||''}</p>
+        <span class="tool-badge">${t.subject}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderPublicStats(){
+  const el=document.getElementById('publicStatsGrid');
+  if(!el) return;
+  el.innerHTML=`
+    <div class="stat-card">
+      <div class="num color-accent">${(DB.teachers&&DB.teachers.length)||DB.settings.teachers||0}</div>
+      <div class="lbl">👨‍🏫 معلم متخصص</div>
+    </div>
+    <div class="stat-card">
+      <div class="num color-green">${DB.classes.length}</div>
+      <div class="lbl">🏫 صف دراسي</div>
+    </div>
+    <div class="stat-card">
+      <div class="num color-gold">${DB.subjects.length}</div>
+      <div class="lbl">📚 مادة دراسية</div>
+    </div>
+    <div class="stat-card">
+      <div class="num color-purple">${DB.exams.length}</div>
+      <div class="lbl">📝 امتحان نشط</div>
+    </div>`;
+}
+
+function renderSubjects(){
+  const g=document.getElementById('subjectsGrid');
+  let list=DB.subjects;
+  if(selectedClassId!==null) list=list.filter(s=>s.classId===selectedClassId);
+  else if(selectedLevel) list=list.filter(s=>{const c=DB.classes.find(x=>x.id===s.classId);return c&&c.level===selectedLevel;});
+  document.getElementById('subjectsCount').textContent=list.length+' مادة';
+  if(!list.length){g.innerHTML='<div class="empty-state"><div class="e-icon">📚</div><p>لا توجد مواد لهذا الصف بعد</p></div>';return;}
+  g.innerHTML=list.map(s=>`
+    <div class="subj-card">
+      <div class="subj-icon">${s.icon}</div>
+      <div class="subj-name">${s.name}</div>
+      <div class="subj-count">${s.lessons} درساً</div>
+      <div class="subj-class-tag">${getClassName(s.classId)}</div>
+    </div>`).join('');
+}
+
+function renderSchedule(){
+  const tbody=document.getElementById('scheduleBody');
+  const dayOrder={السبت:1,الأحد:2,الاثنين:3,الثلاثاء:4,الأربعاء:5,الخميس:6};
+  let list=[...DB.schedule].sort((a,b)=>(dayOrder[a.day]||9)-(dayOrder[b.day]||9));
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="8" class="sch-empty">لا يوجد جدول بعد — أضف حصصاً من لوحة التحكم</td></tr>';
+    return;
+  }
+  tbody.innerHTML=list.map(s=>{
+    let hide=false;
+    if(selectedClassId!==null) hide=s.classId!==selectedClassId;
+    else if(selectedLevel!==null){const c=DB.classes.find(x=>x.id===s.classId);hide=!c||c.level!==selectedLevel;}
+    return `<tr class="${hide?'row-hidden':''}">
+      <td><span class="class-pill">${getClassName(s.classId)}</span></td>
+      <td>${s.day}</td>
+      <td><span class="tbadge">${s.time}</span></td>
+      <td><span class="sbadge">${s.subject}</span></td>
+      <td>${s.teacher}</td>
+      <td>${s.platform}</td>
+      <td>${s.link&&s.link!='#'?`<span style="color:var(--accent2);font-size:10px;">💬 يُرسل بالواتساب</span>`:'—'}</td>
+      <td style="white-space:nowrap;display:${isAdminUnlocked?'':'none'}" class="sch-admin-col">
+        <button class="sch-edit-btn" onclick="editScheduleRow(${s.id})">✏️</button>
+        <button class="sch-del-btn" onclick="delScheduleRow(${s.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('scheduleNote').textContent=DB.settings.schednote||'UTC+3';
+}
+
+function delScheduleRow(id){
+  if(!confirm('حذف هذه الحصة؟'))return;
+  DB.schedule=DB.schedule.filter(s=>s.id!==id);
+  save();renderSchedule();renderAdminLists();updateDashboard();
+}
+
+function editScheduleRow(id){
+  const s=DB.schedule.find(x=>x.id===id);
+  if(!s)return;
+  openAdmin();adminTab('schedule');
+  document.getElementById('sc-class').value=s.classId;
+  document.getElementById('sc-day').value=s.day;
+  document.getElementById('sc-time').value=s.time;
+  document.getElementById('sc-subject').value=s.subject;
+  document.getElementById('sc-teacher').value=s.teacher;
+  document.getElementById('sc-platform').value=s.platform;
+  document.getElementById('sc-link').value=s.link;
+  // remove old entry so saving adds updated one
+  DB.schedule=DB.schedule.filter(x=>x.id!==id);
+  save();
+}
+
+function renderExams(){
+  const g=document.getElementById('examsGrid');
+  let list=DB.exams;
+  if(selectedClassId!==null) list=list.filter(e=>e.classId===selectedClassId);
+  else if(selectedLevel) list=list.filter(e=>{const c=DB.classes.find(x=>x.id===e.classId);return c&&c.level===selectedLevel;});
+  document.getElementById('examsCount').textContent=list.length+' امتحان';
+  if(!list.length){g.innerHTML='<div class="empty-state"><div class="e-icon">📝</div><p>لا توجد امتحانات لهذا الصف</p></div>';return;}
+  const today=new Date();today.setHours(0,0,0,0);
+  const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short',year:'numeric'});
+  g.innerHTML=list.map(e=>{
+    const s=new Date(e.start);const en=new Date(e.end);
+    let st,badge,btnTxt,btnCls='btn-exam';
+    if(today<s){st='قريباً';badge='badge-soon';btnTxt='⏳ لم يبدأ بعد';btnCls='btn-exam off';}
+    else if(today>en){st='منتهي';badge='badge-closed';btnTxt='🔒 انتهى الامتحان';btnCls='btn-exam off';}
+    else{st='متاح الآن';badge='badge-open';btnTxt='💬 الرابط في واتساب الصف';btnCls='btn-exam off';}
+    return `<div class="exam-card">
+      <span class="exam-class-tag">${getClassName(e.classId)}</span>
+      <div class="exam-hd"><span class="exam-subj">${e.icon} ${e.subject}</span><span class="${badge}">${st}</span></div>
+      <div class="exam-rows">
+        <div class="exam-row"><span>⏱️</span> ${e.duration} دقيقة • ${e.questions} سؤالاً</div>
+        <div class="exam-row"><span>📅</span> ${fmt(e.start)} ← ${fmt(e.end)}</div>
+      </div>
+      <button class="${btnCls}" disabled>${btnTxt}</button>
+    </div>`;
+  }).join('');
+}
+
+function renderAlerts(){
+  const g=document.getElementById('alertsGrid');
+  let list=DB.alerts;
+  if(selectedClassId!==null) list=list.filter(a=>a.classId===0||a.classId===selectedClassId);
+  else if(selectedLevel) list=list.filter(a=>{
+    if(a.classId===0)return true;
+    const c=DB.classes.find(x=>x.id===a.classId);return c&&c.level===selectedLevel;
+  });
+  list=[...list].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('alertsCount').textContent=list.length+' تنبيه';
+  if(!list.length){g.innerHTML='<div class="empty-state"><div class="e-icon">🔔</div><p>لا توجد تنبيهات</p></div>';return;}
+  const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short'});
+  g.innerHTML=list.map(a=>`
+    <div class="alert-card ${a.type}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-content">
+        <div class="alert-title">${a.title}</div>
+        <div class="alert-body">${a.body}</div>
+        <div class="alert-meta">
+          <span class="alert-date">📅 ${fmt(a.date)}</span>
+          ${a.deadline?`<span class="alert-date">⏰ ينتهي: ${fmt(a.deadline)}</span>`:''}
+          <span class="alert-class-tag ${a.classId===0?'all':'specific'}">${a.classId===0?'جميع الصفوف':getClassName(a.classId)}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderPayments(){
+  const g=document.getElementById('paymentsGrid');
+  if(!DB.payments.length){g.innerHTML='<div class="empty-state"><div class="e-icon">💰</div><p>لا توجد رسوم مضافة</p></div>';return;}
+  const today=new Date();today.setHours(0,0,0,0);
+  const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short',year:'numeric'});
+  g.innerHTML=DB.payments.map(p=>{
+    const dl=new Date(p.deadline);
+    const days=Math.ceil((dl-today)/86400000);
+    const pct=Math.max(0,Math.min(100,100-Math.round(days/30*100)));
+    const urgent=p.urgent||days<=7;
+    return `<div class="pay-card${urgent?' urgent':''}">
+      <div class="pay-hd"><span class="pay-title">${p.title}</span>${urgent?'<span style="color:var(--red);font-size:10px;font-weight:700;">⚠️ عاجل</span>':''}</div>
+      <div class="pay-amt">${p.amount} <small>${p.currency}</small></div>
+      <div class="pay-rows">
+        <div class="pay-row"><span>📅 الموعد النهائي</span><span>${fmt(dl)}</span></div>
+        <div class="pay-row"><span>⏳ المتبقي</span><span style="color:${days<=7?'var(--red)':days<=14?'var(--gold)':'var(--green)'}">${days>0?days+' يوم':'انتهى'}</span></div>
+        <div class="pay-row"><span>💳 الدفع</span><span>${p.method}</span></div>
+      </div>
+      <div class="deadline-bar"><div class="deadline-fill${days<=7?' red':''}" style="width:${pct}%"></div></div>
+      ${p.note?`<div class="pay-note">📌 ${p.note}</div>`:''}
+      <button class="btn-pay">💳 الدفع الآن</button>
+    </div>`;
+  }).join('');
+}
+
+function renderNews(){
+  const g=document.getElementById('newsGrid');
+  if(!DB.news.length){g.innerHTML='<div class="empty-state"><div class="e-icon">📰</div><p>لا توجد أخبار</p></div>';return;}
+  const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short',year:'numeric'});
+  g.innerHTML=DB.news.map(n=>`
+    <div class="news-card">
+      <div class="news-thumb">${n.icon}</div>
+      <div class="news-body">
+        <div class="news-cat">${n.cat}</div>
+        <div class="news-title">${n.title}</div>
+        <div class="news-date">📅 ${fmt(n.date)}</div>
+        ${n.content?`<div class="news-content">${n.content}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function renderContact(){
+  const c=DB.contact;
+  document.getElementById('contactGrid').innerHTML=`
+    <div class="cont-card"><div class="cont-icon">💬</div><h4>واتساب</h4><p>تواصل مع الإدارة</p><a href="${c.whatsapp}" class="cont-link" target="_blank">فتح واتساب</a></div>
+    <div class="cont-card"><div class="cont-icon">📧</div><h4>البريد</h4><p>${c.email||'—'}</p><a href="mailto:${c.email}" class="cont-link">إرسال</a></div>
+    <div class="cont-card"><div class="cont-icon">📋</div><h4>التسجيل</h4><p>سجّل الآن</p><a href="${c.register}" class="cont-link" target="_blank">التسجيل</a></div>
+    <div class="cont-card"><div class="cont-icon">🎥</div><h4>يوتيوب</h4><p>الدروس المسجّلة</p><a href="${c.youtube}" class="cont-link" target="_blank">القناة</a></div>`;
+  ['c-whatsapp','c-email','c-register','c-youtube','c-facebook','c-telegram'].forEach(id=>{
+    const key=id.replace('c-','');
+    document.getElementById(id).value=c[key]||'';
+  });
+}
+
+function renderSettings(){
+  const s=DB.settings;
+  document.getElementById('heroDesc').textContent=s.desc;
+  document.getElementById('footerDesc').textContent=s.desc;
+  document.getElementById('statTeachers').innerHTML=(s.teachers||0)+'<em>+</em>';
+  document.getElementById('statClasses').textContent=DB.classes.length;
+  document.getElementById('statSubjects2').innerHTML=DB.subjects.length+'<em>+</em>';
+  document.getElementById('scheduleNote').textContent=s.schednote||'UTC+3';
+  ['set-name','set-abbr','set-students','set-teachers','set-desc','set-schednote'].forEach(id=>{
+    const key=id.replace('set-','').replace('schednote','schednote');
+    const map={name:'name',abbr:'abbr',students:'students',teachers:'teachers',desc:'desc',schednote:'schednote'};
+    document.getElementById(id).value=s[map[id.replace('set-','')]]||'';
+  });
+  document.getElementById('set-ticker').value=DB.ticker||'';
+}
+
+function renderAdminLists(){
+  // Classes
+  const cl=document.getElementById('classes-list');
+  cl.innerHTML=DB.classes.map(c=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${{primary:'🟣',middle:'🔵',secondary:'🟢'}[c.level]} ${c.name}</div>
+        <div class="admin-item-sub">${levelNames[c.level]||c.level}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('classes',${c.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Subjects
+  document.getElementById('subjects-list').innerHTML=DB.subjects.map(s=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${s.icon} ${s.name}</div>
+        <div class="admin-item-sub">${getClassName(s.classId)} • ${s.lessons} درساً • ${s.teacher}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('subjects',${s.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Teachers
+  document.getElementById('teachers-list').innerHTML=(DB.teachers||[]).map(t=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${t.icon||'👨‍🏫'} ${t.name}</div>
+        <div class="admin-item-sub">${t.subject} ${t.bio?'• '+t.bio:''}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delTeacher(${t.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Schedule
+  document.getElementById('schedule-list').innerHTML=DB.schedule.map(s=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${getClassName(s.classId)} — ${s.subject}</div>
+        <div class="admin-item-sub">${s.day} ${s.time} • ${s.teacher} • ${s.platform}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('schedule',${s.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Exams
+  document.getElementById('exams-list').innerHTML=DB.exams.map(e=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${e.icon} ${e.subject} — ${getClassName(e.classId)}</div>
+        <div class="admin-item-sub">${e.start} → ${e.end} • ${e.duration} دقيقة</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('exams',${e.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Alerts
+  document.getElementById('alerts-list').innerHTML=DB.alerts.map(a=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${a.icon} ${a.title}</div>
+        <div class="admin-item-sub">${getClassName(a.classId)} • ${a.date}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('alerts',${a.id})">حذف</button></div>
+    </div>`).join('');
+
+  // Payments
+  document.getElementById('payments-list').innerHTML=DB.payments.map(p=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${p.title} — ${p.amount} ${p.currency}</div>
+        <div class="admin-item-sub">الموعد: ${p.deadline} • ${p.method}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('payments',${p.id})">حذف</button></div>
+    </div>`).join('');
+
+  // News
+  document.getElementById('news-list').innerHTML=DB.news.map(n=>`
+    <div class="admin-item">
+      <div class="admin-item-info">
+        <div class="admin-item-title">${n.icon} ${n.title}</div>
+        <div class="admin-item-sub">${n.cat} • ${n.date}</div>
+      </div>
+      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('news',${n.id})">حذف</button></div>
+    </div>`).join('');
+}
+
+function populateClassSelects(){
+  const opts=['<option value="0">🌐 جميع الصفوف</option>',...DB.classes.map(c=>`<option value="${c.id}">${{primary:'🟣',middle:'🔵',secondary:'🟢'}[c.level]} ${c.name}</option>`)].join('');
+  const optsNoAll=DB.classes.map(c=>`<option value="${c.id}">${{primary:'🟣',middle:'🔵',secondary:'🟢'}[c.level]} ${c.name}</option>`).join('');
+  ['s-class','sc-class','ex-class'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).innerHTML=optsNoAll;});
+  ['al-class'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).innerHTML=opts;});
+}
+
+function updateDashboard(){
+  document.getElementById('d-classes').textContent=DB.classes.length;
+  document.getElementById('d-subjects').textContent=DB.subjects.length;
+  document.getElementById('d-schedule').textContent=DB.schedule.length;
+  document.getElementById('d-exams').textContent=DB.exams.length;
+  document.getElementById('d-alerts').textContent=DB.alerts.length;
+  document.getElementById('d-news').textContent=DB.news.length;
+}
+
+// ===== ADD ACTIONS =====
+function addClass(){
+  const n=document.getElementById('cl-name').value.trim();
+  if(!n){alert('أدخل اسم الصف');return;}
+  DB.classes.push({id:nextId(DB.classes),name:n,level:document.getElementById('cl-level').value,desc:document.getElementById('cl-desc').value.trim()});
+  save();render();
+  ['cl-name','cl-desc'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة الصف!');
+}
+
+function addSubject(){
+  const n=document.getElementById('s-name').value.trim();
+  if(!n){alert('أدخل اسم المادة');return;}
+  DB.subjects.push({id:nextId(DB.subjects),name:n,icon:document.getElementById('s-icon').value||'📚',classId:parseInt(document.getElementById('s-class').value),lessons:parseInt(document.getElementById('s-lessons').value)||0,teacher:document.getElementById('s-teacher').value.trim()||'—'});
+  save();render();
+  ['s-name','s-icon','s-lessons','s-teacher'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة المادة!');
+}
+
+function addTeacher(){
+  const n=document.getElementById('t-name').value.trim();
+  if(!n){alert('أدخل اسم المعلم');return;}
+  if(!DB.teachers) DB.teachers=[];
+  DB.teachers.push({id:nextId(DB.teachers),name:n,subject:document.getElementById('t-subject').value.trim()||'—',icon:document.getElementById('t-icon').value||'👨‍🏫',bio:document.getElementById('t-bio').value.trim()||''});
+  save();render();
+  ['t-name','t-subject','t-icon','t-bio'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة المعلم!');
+}
+
+function delTeacher(id){
+  if(!confirm('حذف هذا المعلم؟'))return;
+  DB.teachers=DB.teachers.filter(t=>t.id!==id);
+  save();render();
+}
+
+function addSchedule(){
+  const s=document.getElementById('sc-subject').value.trim();
+  if(!s){alert('أدخل اسم المادة');return;}
+  DB.schedule.push({id:nextId(DB.schedule),classId:parseInt(document.getElementById('sc-class').value),day:document.getElementById('sc-day').value,time:document.getElementById('sc-time').value.trim()||'—',subject:s,teacher:document.getElementById('sc-teacher').value.trim()||'—',platform:document.getElementById('sc-platform').value,link:document.getElementById('sc-link').value.trim()||'#'});
+  save();render();
+  ['sc-time','sc-subject','sc-teacher','sc-link'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة الحصة!');
+}
+
+function addExam(){
+  const s=document.getElementById('ex-subject').value.trim();
+  if(!s){alert('أدخل اسم المادة');return;}
+  DB.exams.push({id:nextId(DB.exams),classId:parseInt(document.getElementById('ex-class').value),subject:s,icon:document.getElementById('ex-icon').value||'📝',duration:parseInt(document.getElementById('ex-duration').value)||60,questions:parseInt(document.getElementById('ex-questions').value)||20,start:document.getElementById('ex-start').value||new Date().toISOString().split('T')[0],end:document.getElementById('ex-end').value||new Date().toISOString().split('T')[0],link:document.getElementById('ex-link').value.trim()||'#'});
+  save();render();
+  ['ex-subject','ex-icon','ex-duration','ex-questions','ex-start','ex-end','ex-link'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة الامتحان!');
+}
+
+function addAlert(){
+  const t=document.getElementById('al-title').value.trim();
+  if(!t){alert('أدخل عنوان التنبيه');return;}
+  DB.alerts.unshift({id:nextId(DB.alerts),title:t,type:document.getElementById('al-type').value,icon:document.getElementById('al-icon').value||'🔔',classId:parseInt(document.getElementById('al-class').value)||0,date:document.getElementById('al-date').value||new Date().toISOString().split('T')[0],deadline:document.getElementById('al-deadline').value||'',body:document.getElementById('al-body').value.trim()});
+  save();render();
+  ['al-title','al-icon','al-date','al-deadline','al-body'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تم نشر التنبيه!');
+}
+
+function addPayment(){
+  const t=document.getElementById('py-title').value.trim();
+  if(!t){alert('أدخل عنوان الرسوم');return;}
+  DB.payments.push({id:nextId(DB.payments),title:t,amount:document.getElementById('py-amount').value.trim()||'0',currency:document.getElementById('py-currency').value.trim()||'دولار',deadline:document.getElementById('py-deadline').value||new Date().toISOString().split('T')[0],method:document.getElementById('py-method').value.trim()||'واتساب',urgent:document.getElementById('py-urgent').value==='true',note:document.getElementById('py-note').value.trim()});
+  save();render();
+  ['py-title','py-amount','py-currency','py-deadline','py-method','py-note'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تمت إضافة الرسوم!');
+}
+
+function addNews(){
+  const t=document.getElementById('n-title').value.trim();
+  if(!t){alert('أدخل عنوان الخبر');return;}
+  DB.news.unshift({id:nextId(DB.news),title:t,cat:document.getElementById('n-cat').value,icon:document.getElementById('n-icon').value||'📢',date:document.getElementById('n-date').value||new Date().toISOString().split('T')[0],content:document.getElementById('n-content').value.trim()});
+  save();render();
+  ['n-title','n-icon','n-date','n-content'].forEach(id=>document.getElementById(id).value='');
+  alert('✅ تم نشر الخبر!');
+}
+
+function saveContact(){
+  DB.contact={whatsapp:document.getElementById('c-whatsapp').value,email:document.getElementById('c-email').value,register:document.getElementById('c-register').value,youtube:document.getElementById('c-youtube').value,facebook:document.getElementById('c-facebook').value,telegram:document.getElementById('c-telegram').value};
+  save();render();alert('✅ تم الحفظ!');
+}
+
+function saveSettings(){
+  DB.ticker=document.getElementById('set-ticker').value;
+  DB.settings={name:document.getElementById('set-name').value,abbr:document.getElementById('set-abbr').value,students:document.getElementById('set-students').value,teachers:document.getElementById('set-teachers').value,desc:document.getElementById('set-desc').value,schednote:document.getElementById('set-schednote').value};
+  save();render();alert('✅ تم الحفظ!');
+}
+
+function delItem(type,id){
+  if(!confirm('حذف هذا العنصر؟'))return;
+  DB[type]=DB[type].filter(i=>i.id!==id);
+  save();render();
+}
+
+function clearAll(){
+  localStorage.removeItem('eschool_v2_backup');
+  location.reload();
+}
+
+// ===== ADMIN PASSWORD =====
+const ADMIN_PASS = 'eschool2025'; // غيّر هذه الكلمة السرية
+let isAdminUnlocked = false;
+
+function openAdmin(){
+  if(isAdminUnlocked){
+    document.getElementById('adminOverlay').classList.add('open');
+    return;
+  }
+  const pass = prompt('🔐 أدخل كلمة مرور الإدارة:');
+  if(pass === ADMIN_PASS){
+    isAdminUnlocked = true;
+    document.getElementById('adminOverlay').classList.add('open');
+    // show edit/delete buttons in schedule now that admin is unlocked
+    document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
+    document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
+  } else if(pass !== null){
+    alert('❌ كلمة المرور غير صحيحة');
+  }
+}
+function closeAdmin(){
+  document.getElementById('adminOverlay').classList.remove('open');
+}
+function adminTab(n){
+  const tabs=['dashboard','subjects','teachers','schedule','exams','alerts','payments','news','contact','settings'];
+  document.querySelectorAll('.admin-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===n));
+  document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+n).classList.add('active');
+}
+function scrollTo2(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});closeAdmin();}
+function goHome(){window.scrollTo({top:0,behavior:'smooth'});}
+document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdmin();});
+
+let isDark=true;
+function toggleTheme(){
+  isDark=!isDark;
+  const r=document.documentElement;
+  if(!isDark){
+    document.body.classList.add('light');
+    r.style.setProperty('--bg','#f0f4f8');
+    r.style.setProperty('--bg2','#dde3ed');
+    r.style.setProperty('--card','#ffffff');
+    r.style.setProperty('--card2','#edf1f7');
+    r.style.setProperty('--text','#1a202c');
+    r.style.setProperty('--muted','#4a5568');
+    r.style.setProperty('--border','#c2cad8');
+    r.style.setProperty('--accent','#1565c0');
+    r.style.setProperty('--accent2','#007a62');
+    r.style.setProperty('--gold','#b8860b');
+    r.style.setProperty('--red','#c0392b');
+    r.style.setProperty('--green','#1e7e34');
+    document.querySelector('.dark-btn').textContent='☀️';
+  } else {
+    document.body.classList.remove('light');
+    r.style.setProperty('--bg','#0a1628');
+    r.style.setProperty('--bg2','#0d2444');
+    r.style.setProperty('--card','#0f1e35');
+    r.style.setProperty('--card2','#132340');
+    r.style.setProperty('--text','#e8edf5');
+    r.style.setProperty('--muted','#8a9ab8');
+    r.style.setProperty('--border','#1a2e4a');
+    r.style.setProperty('--accent','#1e90ff');
+    r.style.setProperty('--accent2','#00d4aa');
+    r.style.setProperty('--gold','#f5c518');
+    r.style.setProperty('--red','#ff4757');
+    r.style.setProperty('--green','#2ed573');
+    document.querySelector('.dark-btn').textContent='🌙';
+  }
+}
+
+// Date
+const mo=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const dw=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const nd=new Date();
+document.getElementById('todayDate').textContent=`${dw[nd.getDay()]} ${nd.getDate()} ${mo[nd.getMonth()]} ${nd.getFullYear()}`;
+
+load();render(); // instant paint from local backup (or defaults) — no blank screen
+initCloudSync();  // then connect to Firestore; live updates will re-render automatically
+// open class selector expanded on first load
+document.getElementById('csExpanded').classList.add('open');
+</script>
+</body>
+</html>
