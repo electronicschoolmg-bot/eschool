@@ -9,6 +9,7 @@
   // ===== FIREBASE SETUP =====
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDiy20XiFV8l2jnxedKGfdXf5Xsa5hAXWg",
@@ -21,11 +22,16 @@
 
   const fbApp = initializeApp(firebaseConfig);
   const fbDb = getFirestore(fbApp);
+  const fbAuth = getAuth(fbApp);
+  const googleProvider = new GoogleAuthProvider();
   // single document holds the whole school database
   const schoolDocRef = doc(fbDb, "eschool", "main");
 
+  // the ONLY email allowed to write/edit the site
+  const ADMIN_EMAIL = "0902301167c@gmail.com";
+
   // expose to the regular (non-module) script below
-  window.__firebase = { fbDb, schoolDocRef, getDoc, setDoc, onSnapshot };
+  window.__firebase = { fbDb, schoolDocRef, getDoc, setDoc, onSnapshot, fbAuth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, ADMIN_EMAIL };
 </script>
 <style>
 :root{
@@ -35,15 +41,20 @@
   --purple:#7c3aed;--orange:#ff6b35;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;overflow-x:hidden;}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;overflow-x:hidden;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;}
 
 /* TOPBAR */
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;justify-content:space-between;align-items:center;font-size:11px;}
-.ticker-wrap{display:flex;align-items:center;gap:6px;overflow:hidden;flex:1;}
-.t-label{background:var(--red);color:#fff;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;white-space:nowrap;}
-.ticker-text{color:var(--muted);white-space:nowrap;animation:ticker 30s linear infinite;}
-@keyframes ticker{0%{transform:translateX(-100%);}100%{transform:translateX(100vw);}}
-.topbar-date{color:var(--accent2);white-space:nowrap;font-size:11px;}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:7px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+.ticker-wrap{display:flex;align-items:center;gap:8px;overflow:hidden;flex:1;position:relative;height:18px;}
+.t-label{background:var(--red);color:#fff;padding:3px 9px;border-radius:4px;font-size:10px;font-weight:800;white-space:nowrap;flex-shrink:0;}
+.ticker-viewport{flex:1;overflow:hidden;position:relative;height:18px;}
+.ticker-text{position:absolute;top:0;right:0;white-space:nowrap;font-weight:700;color:var(--text);font-size:12px;animation:ticker-scroll linear infinite;}
+@keyframes ticker-scroll{
+  0%{transform:translateX(-100%);}
+  100%{transform:translateX(100%);}
+}
+.topbar-date{color:var(--accent2);white-space:nowrap;font-size:11px;flex-shrink:0;}
 
 /* NAVBAR */
 nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(30,144,255,.15);}
@@ -195,6 +206,12 @@ nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;d
 .deadline-fill.red{background:linear-gradient(90deg,var(--gold),var(--red));}
 .btn-pay{width:100%;background:linear-gradient(135deg,var(--gold),#e5a800);color:#000;border:none;padding:9px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:800;cursor:pointer;}
 .pay-note{font-size:11px;color:var(--muted);margin-bottom:9px;line-height:1.5;}
+.bank-info-box{background:rgba(245,197,24,.06);border:1px dashed rgba(245,197,24,.35);border-radius:8px;padding:11px 13px;margin-top:4px;}
+.bank-info-title{font-size:11px;font-weight:800;color:var(--gold);margin-bottom:7px;}
+.bank-info-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:3px 0;}
+.bank-info-row span:last-child{color:var(--text);font-weight:700;}
+.bank-info-row .bank-num{color:var(--gold);font-family:monospace;font-size:13px;letter-spacing:1px;}
+.bank-info-note{font-size:10px;color:var(--muted);margin-top:7px;line-height:1.6;border-top:1px solid var(--border);padding-top:7px;}
 
 /* NEWS */
 .news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:13px;}
@@ -361,8 +378,10 @@ html,body{overflow-x:hidden;max-width:100vw;}
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="ticker-wrap">
-    <span class="t-label">🔴 عاجل</span>
-    <span class="ticker-text" id="tickerText">مرحباً بكم في المدرسة الإلكترونية E-School</span>
+    <span class="t-label" id="tickerLabel">🔴 عاجل</span>
+    <div class="ticker-viewport">
+      <span class="ticker-text" id="tickerText">مرحباً بكم في المدرسة الإلكترونية E-School</span>
+    </div>
   </div>
   <span class="topbar-date" id="todayDate"></span>
 </div>
@@ -727,19 +746,29 @@ html,body{overflow-x:hidden;max-width:100vw;}
       <div class="admin-section" id="sec-contact">
         <div class="admin-note"><strong>تحديث معلومات التواصل</strong></div>
         <div class="form-grid">
-          <div class="form-group"><label>رقم واتساب</label><input type="text" id="c-whatsapp" placeholder="+249xxxxxxxxx"></div>
+          <div class="form-group"><label>رابط جروب واتساب</label><input type="text" id="c-whatsapp" placeholder="https://chat.whatsapp.com/..."></div>
+          <div class="form-group"><label>قناة واتساب الرسمية</label><input type="text" id="c-whatsappChannel" placeholder="https://whatsapp.com/channel/..."></div>
           <div class="form-group"><label>البريد الإلكتروني</label><input type="text" id="c-email" placeholder="info@eschool.com"></div>
-          <div class="form-group"><label>رابط التسجيل</label><input type="text" id="c-register" placeholder="https://forms.google.com/..."></div>
-          <div class="form-group"><label>قناة يوتيوب</label><input type="text" id="c-youtube" placeholder="https://youtube.com/..."></div>
+          <div class="form-group"><label>رابط استمارة التسجيل</label><input type="text" id="c-register" placeholder="https://forms.gle/..."></div>
           <div class="form-group"><label>فيسبوك</label><input type="text" id="c-facebook" placeholder="https://facebook.com/..."></div>
-          <div class="form-group"><label>تيليغرام</label><input type="text" id="c-telegram" placeholder="https://t.me/..."></div>
+          <div class="form-group"><label>قناة يوتيوب</label><input type="text" id="c-youtube" placeholder="https://youtube.com/..."></div>
+          <div class="form-group full"><label>🤖 رابط بوت تيليغرام (للأسئلة الآلية)</label><input type="text" id="c-telegramBot" placeholder="https://t.me/YourBot"></div>
         </div>
         <button class="btn-save" onclick="saveContact()">💾 حفظ</button>
+        <div class="sep"></div>
+        <div class="admin-note"><strong>🏦 بيانات الحساب البنكي</strong> — تظهر للطلاب في قسم الرسوم الدراسية</div>
+        <div class="form-grid">
+          <div class="form-group"><label>اسم البنك</label><input type="text" id="bk-name" placeholder="بنك الخرطوم"></div>
+          <div class="form-group"><label>رقم الحساب</label><input type="text" id="bk-number" placeholder="2339762"></div>
+          <div class="form-group"><label>اسم صاحب الحساب</label><input type="text" id="bk-owner" placeholder="أحمد عبيد محمد"></div>
+          <div class="form-group full"><label>ملاحظة الدفع</label><textarea id="bk-note" placeholder="يرجى كتابة اسم الطالب والصف..."></textarea></div>
+        </div>
+        <button class="btn-save" onclick="saveBankInfo()">💾 حفظ بيانات البنك</button>
       </div>
 
       <!-- SETTINGS -->
       <div class="admin-section" id="sec-settings">
-        <div class="admin-note"><strong>الإعدادات العامة</strong></div>
+        <div class="admin-note">🔐 <strong>مسجّل دخولك بحساب:</strong> <span id="adminEmailDisplay">—</span><br>الحماية الآن عبر حساب Google الخاص بك فقط — لا توجد كلمة مرور مكشوفة.</div>
         <div class="form-grid">
           <div class="form-group"><label>اسم المدرسة</label><input type="text" id="set-name" placeholder="المدرسة الإلكترونية"></div>
           <div class="form-group"><label>الاختصار</label><input type="text" id="set-abbr" placeholder="ES" maxlength="3"></div>
@@ -751,6 +780,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
         </div>
         <button class="btn-save" onclick="saveSettings()">💾 حفظ الإعدادات</button>
         <div class="sep"></div>
+        <button class="btn-edit" onclick="adminSignOut()">🚪 تسجيل الخروج</button>
         <button class="btn-del" onclick="if(confirm('مسح كل البيانات؟'))clearAll()">🗑️ مسح كل البيانات</button>
       </div>
 
@@ -808,13 +838,28 @@ let DB = {
     {id:1,title:'فتح باب التسجيل للفصل الثاني',cat:'إعلان مهم',icon:'🎉',date:'2025-01-15',content:'يسعد الإدارة الإعلان عن فتح باب التسجيل للفصل الثاني. يرجى التسجيل قبل نهاية الشهر.'},
     {id:2,title:'تكريم أوائل الفصل الأول',cat:'إنجازات',icon:'🏆',date:'2025-01-05',content:'تهنئ إدارة المدرسة أوائل الطلاب على تفوقهم وتتمنى لهم المزيد.'}
   ],
-  contact:{whatsapp:'#',email:'info@eschool.com',register:'#',youtube:'#',facebook:'#',telegram:'#'},
+  contact:{
+    whatsapp:'https://chat.whatsapp.com/LuWucNPNZpVFtRs7VQy',
+    email:'info@eschool.com',
+    register:'https://forms.gle/tEohTZudiuWHrdTp6',
+    youtube:'#',
+    facebook:'https://www.facebook.com/ccischools',
+    telegram:'#',
+    whatsappChannel:'https://whatsapp.com/channel/0029Vab5dpICxoB0C5YXJU0F',
+    telegramBot:'#'
+  },
+  bankInfo:{
+    bankName:'بنك الخرطوم',
+    accountNumber:'2339762',
+    accountName:'أحمد عبيد محمد',
+    note:'يرجى كتابة اسم الطالب والصف والقسط في خانة التعليق عند التحويل — مثال: محمد علي حسن - خامس - قسط1'
+  },
   teachers:[
     {id:1,name:'أ. محمد أحمد',subject:'الرياضيات',icon:'🔢',bio:'خبرة 8 سنوات في تدريس الرياضيات لجميع المراحل'},
     {id:2,name:'أ. فاطمة علي',subject:'اللغة العربية',icon:'📖',bio:'متخصصة في تعليم اللغة العربية وآدابها'},
     {id:3,name:'أ. خالد إبراهيم',subject:'الفيزياء',icon:'⚡',bio:'معلم فيزياء للمرحلة الثانوية بخبرة واسعة'}
   ],
-  settings:{name:'المدرسة الإلكترونية',abbr:'ES',students:'500',teachers:'20',desc:'مدرسة إلكترونية متكاملة تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
+  settings:{name:'مدارس كامبردج سيتي العالمية - القسم العربي',abbr:'CCI',students:'500',teachers:'20',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم — تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
 };
 
 let selectedClassId = null;
@@ -1006,7 +1051,40 @@ function render(){
   renderAdminLists();
   updateDashboard();
   populateClassSelects();
-  document.getElementById('tickerText').textContent=DB.ticker;
+  setupTicker();
+}
+
+// ===== SEQUENTIAL TICKER (alerts play one after another, loop forever) =====
+let tickerQueue = [];
+let tickerIndex = 0;
+
+function setupTicker(){
+  // build the queue: school-wide alerts first (urgent ones), then the manual DB.ticker message, then loop
+  const alertMsgs = (DB.alerts||[])
+    .filter(a=>a.classId===0) // only school-wide alerts in the public ticker (class-specific ones shown in Alerts section)
+    .map(a=>`${a.icon||'🔔'} ${a.title}`);
+  const manual = DB.ticker ? [`📢 ${DB.ticker}`] : [];
+  tickerQueue = [...alertMsgs, ...manual];
+  if(!tickerQueue.length) tickerQueue = ['📢 مرحباً بكم في موقع المدرسة'];
+  tickerIndex = 0;
+  playNextTicker();
+}
+
+function playNextTicker(){
+  const el = document.getElementById('tickerText');
+  if(!el) return;
+  const msg = tickerQueue[tickerIndex % tickerQueue.length];
+  el.textContent = msg;
+  // restart the CSS animation cleanly
+  el.style.animation = 'none';
+  // force reflow so the animation restarts from scratch
+  void el.offsetWidth;
+  // duration scales with message length so short and long alerts both read clearly
+  const duration = Math.max(8, Math.min(18, msg.length * 0.22));
+  el.style.animation = `ticker-scroll ${duration}s linear`;
+  tickerIndex++;
+  clearTimeout(window.__tickerTimer);
+  window.__tickerTimer = setTimeout(playNextTicker, duration*1000 + 400); // small pause between alerts
 }
 
 function renderTeachers(){
@@ -1180,17 +1258,25 @@ function renderPayments(){
     const days=Math.ceil((dl-today)/86400000);
     const pct=Math.max(0,Math.min(100,100-Math.round(days/30*100)));
     const urgent=p.urgent||days<=7;
+    const bank=DB.bankInfo||{};
     return `<div class="pay-card${urgent?' urgent':''}">
       <div class="pay-hd"><span class="pay-title">${p.title}</span>${urgent?'<span style="color:var(--red);font-size:10px;font-weight:700;">⚠️ عاجل</span>':''}</div>
       <div class="pay-amt">${p.amount} <small>${p.currency}</small></div>
       <div class="pay-rows">
         <div class="pay-row"><span>📅 الموعد النهائي</span><span>${fmt(dl)}</span></div>
         <div class="pay-row"><span>⏳ المتبقي</span><span style="color:${days<=7?'var(--red)':days<=14?'var(--gold)':'var(--green)'}">${days>0?days+' يوم':'انتهى'}</span></div>
-        <div class="pay-row"><span>💳 الدفع</span><span>${p.method}</span></div>
+        <div class="pay-row"><span>💳 طريقة الدفع</span><span>${p.method}</span></div>
       </div>
       <div class="deadline-bar"><div class="deadline-fill${days<=7?' red':''}" style="width:${pct}%"></div></div>
       ${p.note?`<div class="pay-note">📌 ${p.note}</div>`:''}
-      <button class="btn-pay">💳 الدفع الآن</button>
+      ${bank.accountNumber?`
+      <div class="bank-info-box">
+        <div class="bank-info-title">🏦 بيانات الحساب البنكي</div>
+        <div class="bank-info-row"><span>البنك</span><span>${bank.bankName||'—'}</span></div>
+        <div class="bank-info-row"><span>رقم الحساب</span><span class="bank-num">${bank.accountNumber}</span></div>
+        <div class="bank-info-row"><span>الاسم</span><span>${bank.accountName||'—'}</span></div>
+        ${bank.note?`<div class="bank-info-note">📝 ${bank.note}</div>`:''}
+      </div>`:''}
     </div>`;
   }).join('');
 }
@@ -1213,15 +1299,25 @@ function renderNews(){
 
 function renderContact(){
   const c=DB.contact;
+  const b=DB.bankInfo||{};
   document.getElementById('contactGrid').innerHTML=`
-    <div class="cont-card"><div class="cont-icon">💬</div><h4>واتساب</h4><p>تواصل مع الإدارة</p><a href="${c.whatsapp}" class="cont-link" target="_blank">فتح واتساب</a></div>
-    <div class="cont-card"><div class="cont-icon">📧</div><h4>البريد</h4><p>${c.email||'—'}</p><a href="mailto:${c.email}" class="cont-link">إرسال</a></div>
-    <div class="cont-card"><div class="cont-icon">📋</div><h4>التسجيل</h4><p>سجّل الآن</p><a href="${c.register}" class="cont-link" target="_blank">التسجيل</a></div>
-    <div class="cont-card"><div class="cont-icon">🎥</div><h4>يوتيوب</h4><p>الدروس المسجّلة</p><a href="${c.youtube}" class="cont-link" target="_blank">القناة</a></div>`;
-  ['c-whatsapp','c-email','c-register','c-youtube','c-facebook','c-telegram'].forEach(id=>{
-    const key=id.replace('c-','');
-    document.getElementById(id).value=c[key]||'';
-  });
+    <div class="cont-card"><div class="cont-icon">💬</div><h4>جروب واتساب</h4><p>انضم لمجموعة المدرسة</p><a href="${c.whatsapp||'#'}" class="cont-link" target="_blank">انضمام</a></div>
+    <div class="cont-card"><div class="cont-icon">📢</div><h4>قناة واتساب</h4><p>آخر الإعلانات الرسمية</p><a href="${c.whatsappChannel||'#'}" class="cont-link" target="_blank">متابعة</a></div>
+    <div class="cont-card"><div class="cont-icon">📋</div><h4>التسجيل</h4><p>سجّل بياناتك الآن</p><a href="${c.register||'#'}" class="cont-link" target="_blank">التسجيل</a></div>
+    <div class="cont-card"><div class="cont-icon">📘</div><h4>فيسبوك</h4><p>صفحتنا الرسمية</p><a href="${c.facebook||'#'}" class="cont-link" target="_blank">متابعة</a></div>
+    <div class="cont-card"><div class="cont-icon">🤖</div><h4>بوت الأسئلة الآلي</h4><p>إجابات فورية على استفساراتك</p><a href="${c.telegramBot||'#'}" class="cont-link" target="_blank">فتح البوت</a></div>
+    <div class="cont-card"><div class="cont-icon">📧</div><h4>البريد</h4><p>${c.email||'—'}</p><a href="mailto:${c.email}" class="cont-link">إرسال</a></div>`;
+  document.getElementById('c-whatsapp').value=c.whatsapp||'';
+  document.getElementById('c-whatsappChannel').value=c.whatsappChannel||'';
+  document.getElementById('c-email').value=c.email||'';
+  document.getElementById('c-register').value=c.register||'';
+  document.getElementById('c-facebook').value=c.facebook||'';
+  document.getElementById('c-youtube').value=c.youtube||'';
+  document.getElementById('c-telegramBot').value=c.telegramBot||'';
+  document.getElementById('bk-name').value=b.bankName||'';
+  document.getElementById('bk-number').value=b.accountNumber||'';
+  document.getElementById('bk-owner').value=b.accountName||'';
+  document.getElementById('bk-note').value=b.note||'';
 }
 
 function renderSettings(){
@@ -1420,14 +1516,33 @@ function addNews(){
 }
 
 function saveContact(){
-  DB.contact={whatsapp:document.getElementById('c-whatsapp').value,email:document.getElementById('c-email').value,register:document.getElementById('c-register').value,youtube:document.getElementById('c-youtube').value,facebook:document.getElementById('c-facebook').value,telegram:document.getElementById('c-telegram').value};
+  DB.contact={
+    whatsapp:document.getElementById('c-whatsapp').value,
+    whatsappChannel:document.getElementById('c-whatsappChannel').value,
+    email:document.getElementById('c-email').value,
+    register:document.getElementById('c-register').value,
+    youtube:document.getElementById('c-youtube').value,
+    facebook:document.getElementById('c-facebook').value,
+    telegramBot:document.getElementById('c-telegramBot').value
+  };
   save();render();alert('✅ تم الحفظ!');
+}
+
+function saveBankInfo(){
+  DB.bankInfo={
+    bankName:document.getElementById('bk-name').value.trim(),
+    accountNumber:document.getElementById('bk-number').value.trim(),
+    accountName:document.getElementById('bk-owner').value.trim(),
+    note:document.getElementById('bk-note').value.trim()
+  };
+  save();render();alert('✅ تم حفظ بيانات البنك!');
 }
 
 function saveSettings(){
   DB.ticker=document.getElementById('set-ticker').value;
   DB.settings={name:document.getElementById('set-name').value,abbr:document.getElementById('set-abbr').value,students:document.getElementById('set-students').value,teachers:document.getElementById('set-teachers').value,desc:document.getElementById('set-desc').value,schednote:document.getElementById('set-schednote').value};
-  save();render();alert('✅ تم الحفظ!');
+  save();render();
+  alert('✅ تم الحفظ!');
 }
 
 function delItem(type,id){
@@ -1441,26 +1556,67 @@ function clearAll(){
   location.reload();
 }
 
-// ===== ADMIN PASSWORD =====
-const ADMIN_PASS = 'eschool2025'; // غيّر هذه الكلمة السرية
+// ===== ADMIN AUTH (Google Sign-In — real account security) =====
 let isAdminUnlocked = false;
+let currentUserEmail = null;
+
+function initAuth(){
+  if(!window.__firebase){ setTimeout(initAuth,300); return; }
+  const { fbAuth, onAuthStateChanged, ADMIN_EMAIL } = window.__firebase;
+  onAuthStateChanged(fbAuth, (user)=>{
+    if(user && user.email === ADMIN_EMAIL){
+      isAdminUnlocked = true;
+      currentUserEmail = user.email;
+      document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
+      document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
+      const disp=document.getElementById('adminEmailDisplay');
+      if(disp) disp.textContent=user.email;
+    } else {
+      isAdminUnlocked = false;
+      currentUserEmail = user ? user.email : null;
+      document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='none');
+      document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='none');
+      // if a non-admin Google account is signed in, sign them back out
+      if(user && user.email !== ADMIN_EMAIL){
+        window.__firebase.signOut(fbAuth);
+        alert('⚠️ هذا الحساب ليس حساب الإدارة المعتمد. تم تسجيل الخروج.');
+      }
+    }
+  });
+}
 
 function openAdmin(){
   if(isAdminUnlocked){
     document.getElementById('adminOverlay').classList.add('open');
     return;
   }
-  const pass = prompt('🔐 أدخل كلمة مرور الإدارة:');
-  if(pass === ADMIN_PASS){
-    isAdminUnlocked = true;
-    document.getElementById('adminOverlay').classList.add('open');
-    // show edit/delete buttons in schedule now that admin is unlocked
-    document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
-    document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
-  } else if(pass !== null){
-    alert('❌ كلمة المرور غير صحيحة');
-  }
+  if(!window.__firebase){ alert('⏳ جارٍ تحميل النظام، حاول بعد ثوانٍ'); return; }
+  const { fbAuth, googleProvider, signInWithPopup, ADMIN_EMAIL } = window.__firebase;
+  signInWithPopup(fbAuth, googleProvider)
+    .then((result)=>{
+      if(result.user.email === ADMIN_EMAIL){
+        isAdminUnlocked = true;
+        document.getElementById('adminOverlay').classList.add('open');
+        document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
+        document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
+      } else {
+        window.__firebase.signOut(fbAuth);
+        alert('❌ هذا الحساب غير مصرّح له بإدارة الموقع.');
+      }
+    })
+    .catch((err)=>{
+      if(err.code !== 'auth/popup-closed-by-user'){
+        alert('⚠️ تعذّر تسجيل الدخول: '+err.message);
+      }
+    });
 }
+
+function adminSignOut(){
+  if(!window.__firebase) return;
+  window.__firebase.signOut(window.__firebase.fbAuth);
+  closeAdmin();
+}
+
 function closeAdmin(){
   document.getElementById('adminOverlay').classList.remove('open');
 }
@@ -1519,6 +1675,7 @@ document.getElementById('todayDate').textContent=`${dw[nd.getDay()]} ${nd.getDat
 
 load();render(); // instant paint from local backup (or defaults) — no blank screen
 initCloudSync();  // then connect to Firestore; live updates will re-render automatically
+initAuth();       // listen for Google sign-in state
 // open class selector expanded on first load
 document.getElementById('csExpanded').classList.add('open');
 </script>
