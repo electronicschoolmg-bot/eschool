@@ -8,7 +8,7 @@
 <script type="module">
   // ===== FIREBASE SETUP =====
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
   import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -26,12 +26,14 @@
   const googleProvider = new GoogleAuthProvider();
   // single document holds the whole school database
   const schoolDocRef = doc(fbDb, "eschool", "main");
+  // small dedicated doc used only to read back a trustworthy server time (immune to device clock changes)
+  const timeSyncRef = doc(fbDb, "eschool", "_timesync");
 
   // the ONLY email allowed to write/edit the site
   const ADMIN_EMAIL = "0902301167c@gmail.com";
 
   // expose to the regular (non-module) script below
-  window.__firebase = { fbDb, schoolDocRef, getDoc, setDoc, onSnapshot, fbAuth, googleProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, ADMIN_EMAIL };
+  window.__firebase = { fbDb, schoolDocRef, timeSyncRef, getDoc, setDoc, onSnapshot, serverTimestamp, fbAuth, googleProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, ADMIN_EMAIL };
 </script>
 <style>
 :root{
@@ -68,12 +70,12 @@ nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;d
 .nav-links a.active{color:var(--accent);}
 .nav-right{display:flex;gap:6px;align-items:center;}
 .btn-admin{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.3);padding:6px 12px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:.2s;}
-.btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none;}
 .dark-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
 
 /* MOBILE HAMBURGER MENU */
-.hamburger-btn{display:none;background:var(--card);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:7px;align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
-.mobile-menu{display:none;position:fixed;top:0;right:0;bottom:0;width:78%;max-width:300px;background:var(--bg2);z-index:500;box-shadow:-8px 0 30px rgba(0,0,0,.4);transform:translateX(100%);transition:transform .25s ease;flex-direction:column;padding:16px;overflow-y:auto;}
+.hamburger-btn{display:none;background:rgba(30,144,255,.15);border:1px solid rgba(30,144,255,.4);color:var(--accent);width:auto;height:38px;padding:0 12px;border-radius:8px;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:18px;font-weight:700;}
+.mobile-menu{display:flex;position:fixed;top:0;right:0;bottom:0;width:78%;max-width:300px;background:var(--bg2);z-index:500;box-shadow:-8px 0 30px rgba(0,0,0,.4);transform:translateX(100%);transition:transform .25s ease;flex-direction:column;padding:16px;overflow-y:auto;}
 .mobile-menu.open{transform:translateX(0);}
 .mobile-menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:499;}
 .mobile-menu-overlay.open{display:block;}
@@ -226,15 +228,15 @@ nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;d
 .bank-info-note{font-size:10px;color:var(--muted);margin-top:7px;line-height:1.6;border-top:1px solid var(--border);padding-top:7px;}
 
 /* NEWS */
-.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(264px,1fr));gap:13px;}
-.news-card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:.2s;cursor:pointer;}
-.news-card:hover{border-color:var(--accent);transform:translateY(-2px);}
-.news-thumb{height:88px;background:linear-gradient(135deg,var(--bg2),var(--card2));display:flex;align-items:center;justify-content:center;font-size:35px;border-bottom:1px solid var(--border);}
-.news-body{padding:13px;}
-.news-cat{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
-.news-title{font-size:13px;font-weight:800;color:#fff;margin-bottom:4px;line-height:1.4;}
-.news-date{font-size:11px;color:var(--muted);}
-.news-content{font-size:12px;color:var(--muted);margin-top:7px;line-height:1.5;}
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:9px;}
+.news-card{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;transition:.2s;cursor:pointer;display:flex;align-items:center;}
+.news-card:hover{border-color:var(--accent);}
+.news-thumb{width:44px;height:44px;flex-shrink:0;background:linear-gradient(135deg,var(--bg2),var(--card2));display:flex;align-items:center;justify-content:center;font-size:18px;border-left:1px solid var(--border);}
+.news-body{padding:8px 10px;flex:1;min-width:0;}
+.news-cat{font-size:8px;color:var(--accent);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px;}
+.news-title{font-size:11px;font-weight:800;color:#fff;margin-bottom:2px;line-height:1.3;}
+.news-date{font-size:9px;color:var(--muted);}
+.news-content{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .news-class-tag{font-size:9px;color:var(--purple);background:rgba(124,58,237,.15);padding:1px 7px;border-radius:3px;margin-bottom:6px;display:inline-block;}
 
 /* NOTIFICATIONS BANNER */
@@ -416,15 +418,14 @@ html,body{overflow-x:hidden;max-width:100vw;}
     <li><a onclick="scrollTo2('schedule')">📅 الجدول</a></li>
     <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
     <li><a onclick="scrollTo2('alerts')">🔔 التنبيهات</a></li>
-    <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
     <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
     <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
   </ul>
   <div class="nav-right">
     <button class="dark-btn" onclick="toggleTheme()">🌙</button>
     <button class="btn-admin" onclick="openAdmin()">⚙️ لوحة التحكم</button>
-    <button class="btn-join" id="navRegisterBtn" onclick="openRegisterLink()">🚀 التسجيل</button>
-    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
+    <a class="btn-join" id="navRegisterBtn" href="#" target="_blank" rel="noopener">🚀 التسجيل</a>
+    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰ القائمة</button>
   </div>
 </nav>
 
@@ -442,7 +443,6 @@ html,body{overflow-x:hidden;max-width:100vw;}
     <li><a onclick="scrollTo2('schedule')">📅 الجدول</a></li>
     <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
     <li><a onclick="scrollTo2('alerts')">🔔 التنبيهات</a></li>
-    <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
     <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
     <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
   </ul>
@@ -561,14 +561,6 @@ html,body{overflow-x:hidden;max-width:100vw;}
   </div>
 </div>
 
-<!-- PAYMENTS -->
-<div class="sec" id="payments">
-  <div class="sec-hd">
-    <div class="sec-hd-left"><div class="eyebrow">الرسوم الدراسية</div><h2 class="sec-title">المدفوعات</h2></div>
-  </div>
-  <div class="pay-grid" id="paymentsGrid"></div>
-</div>
-
 <!-- NEWS -->
 <div class="sec-alt" id="news">
   <div class="sec">
@@ -581,6 +573,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
 <div class="sec" id="contact">
   <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">تواصل معنا</div><h2 class="sec-title">نحن هنا</h2></div></div>
   <div class="cont-grid" id="contactGrid"></div>
+  <div id="bankInfoDisplay" style="margin-top:14px;"></div>
 </div>
 
 <!-- FOOTER -->
@@ -589,19 +582,16 @@ html,body{overflow-x:hidden;max-width:100vw;}
     <div class="ft-brand">
       <div class="logo"><div class="logo-icon">ES</div><div><div class="logo-ar">المدرسة الإلكترونية</div><div class="logo-en">E-SCHOOL</div></div></div>
       <p id="footerDesc">مدرسة إلكترونية متكاملة تقدم تعليماً عالي الجودة لجميع المراحل الدراسية.</p>
-      <div class="ft-socials" id="ftSocials"></div>
     </div>
     <div class="ft-col"><h5>روابط سريعة</h5><ul>
       <li><a onclick="scrollTo2('home')">🏠 الرئيسية</a></li>
       <li><a onclick="scrollTo2('subjects')">📚 المواد</a></li>
       <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
-      <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
-      <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
+        <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
     </ul></div>
     <div class="ft-col"><h5>معلومات</h5><ul>
       <li><a onclick="scrollTo2('home')">🎓 عن المدرسة</a></li>
       <li><a onclick="scrollTo2('teachers')">👨‍🏫 المعلمون</a></li>
-      <li><a onclick="openRegisterLink()">📋 شروط الالتحاق</a></li>
       <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
     </ul></div>
   </div>
@@ -623,7 +613,6 @@ html,body{overflow-x:hidden;max-width:100vw;}
       <button class="admin-tab" onclick="adminTab('schedule')">📅 الجدول</button>
       <button class="admin-tab" onclick="adminTab('exams')">📝 الامتحانات</button>
       <button class="admin-tab" onclick="adminTab('alerts')">🔔 التنبيهات</button>
-      <button class="admin-tab" onclick="adminTab('payments')">💰 الرسوم</button>
       <button class="admin-tab" onclick="adminTab('news')">📰 الأخبار</button>
       <button class="admin-tab" onclick="adminTab('contact')">📞 التواصل</button>
       <button class="admin-tab" onclick="adminTab('settings')">🔧 الإعدادات</button>
@@ -755,25 +744,9 @@ html,body{overflow-x:hidden;max-width:100vw;}
       </div>
 
       <!-- PAYMENTS -->
-      <div class="admin-section" id="sec-payments">
-        <div class="admin-note"><strong>إضافة رسوم أو دفعة مالية</strong></div>
-        <div class="form-grid">
-          <div class="form-group"><label>عنوان الرسوم</label><input type="text" id="py-title" placeholder="رسوم الفصل الأول"></div>
-          <div class="form-group"><label>المبلغ</label><input type="text" id="py-amount" placeholder="50"></div>
-          <div class="form-group"><label>العملة</label><input type="text" id="py-currency" placeholder="دولار"></div>
-          <div class="form-group"><label>الموعد النهائي</label><input type="date" id="py-deadline"></div>
-          <div class="form-group"><label>طريقة الدفع</label><input type="text" id="py-method" placeholder="واتساب / تحويل"></div>
-          <div class="form-group"><label>عاجل؟</label><select id="py-urgent"><option value="false">لا</option><option value="true">نعم</option></select></div>
-          <div class="form-group full"><label>ملاحظات</label><textarea id="py-note" placeholder="يرجى الدفع قبل الموعد..."></textarea></div>
-        </div>
-        <button class="btn-save" onclick="addPayment()">➕ إضافة</button>
-        <div class="sep"></div>
-        <div class="admin-list" id="payments-list"></div>
-      </div>
-
       <!-- NEWS -->
       <div class="admin-section" id="sec-news">
-        <div class="admin-note"><strong>نشر خبر أو إعلان</strong></div>
+        <div class="admin-note"><strong>نشر خبر أو إعلان</strong> — يمكنك تحديد تاريخ انتهاء ليختفي الإعلان تلقائياً (محمي من تلاعب المستخدم بساعة هاتفه)</div>
         <div class="form-grid">
           <div class="form-group"><label>عنوان الخبر</label><input type="text" id="n-title" placeholder="إعلان مهم"></div>
           <div class="form-group"><label>الفئة</label>
@@ -781,6 +754,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
           </div>
           <div class="form-group"><label>الإيموجي</label><input type="text" id="n-icon" placeholder="📢" maxlength="2"></div>
           <div class="form-group"><label>التاريخ</label><input type="date" id="n-date"></div>
+          <div class="form-group"><label>تاريخ الانتهاء (اختياري)</label><input type="date" id="n-expiry"></div>
           <div class="form-group full"><label>محتوى الخبر</label><textarea id="n-content" placeholder="تفاصيل الخبر..."></textarea></div>
         </div>
         <button class="btn-save" onclick="addNews()">📢 نشر</button>
@@ -876,10 +850,6 @@ let DB = {
     {id:2,title:'امتحان الرياضيات الأسبوع القادم',type:'alert-urgent',icon:'📝',classId:1,date:'2025-01-12',deadline:'2025-01-15',body:'تذكير لطلاب الصف الأول الابتدائي: امتحان الرياضيات يوم الأربعاء القادم الساعة 4 مساءً.'},
     {id:3,title:'إجازة رسمية يوم الخميس',type:'alert-info',icon:'🏖️',classId:0,date:'2025-01-13',deadline:'',body:'تعلم إدارة المدرسة بأن يوم الخميس إجازة رسمية ولن تكون هناك دروس.'},
   ],
-  payments:[
-    {id:1,title:'رسوم الفصل الأول',amount:'50',currency:'دولار',deadline:'2025-01-31',method:'واتساب / تحويل بنكي',urgent:false,note:'يرجى الدفع قبل الموعد المحدد'},
-    {id:2,title:'رسوم الأنشطة',amount:'15',currency:'دولار',deadline:'2025-02-10',method:'واتساب',urgent:false,note:'اختياري للراغبين'}
-  ],
   news:[
     {id:1,title:'فتح باب التسجيل للفصل الثاني',cat:'إعلان مهم',icon:'🎉',date:'2025-01-15',content:'يسعد الإدارة الإعلان عن فتح باب التسجيل للفصل الثاني. يرجى التسجيل قبل نهاية الشهر.'},
     {id:2,title:'تكريم أوائل الفصل الأول',cat:'إنجازات',icon:'🏆',date:'2025-01-05',content:'تهنئ إدارة المدرسة أوائل الطلاب على تفوقهم وتتمنى لهم المزيد.'}
@@ -958,6 +928,44 @@ function initCloudSync(){
     console.error('Firestore listener error:', err);
     showSyncBadge('⚠️ غير متصل — يعرض آخر نسخة محفوظة');
   });
+}
+
+// ===== TAMPER-PROOF SERVER TIME =====
+// If the visitor changes their phone's clock, expiry checks must NOT be fooled.
+// We write a doc with Firestore's serverTimestamp(), read it back immediately,
+// and compute the offset between the trustworthy server time and this device's
+// local clock. From then on, getServerNow() = Date.now() + that offset.
+let serverTimeOffsetMs = 0;
+let serverTimeReady = false;
+
+function getServerNow(){
+  return Date.now() + serverTimeOffsetMs;
+}
+
+async function initServerTimeSync(){
+  if(!window.__firebase){ setTimeout(initServerTimeSync,300); return; }
+  try{
+    const { fbDb, timeSyncRef, setDoc, getDoc, serverTimestamp } = window.__firebase;
+    const beforeLocal = Date.now();
+    await setDoc(timeSyncRef, { ts: serverTimestamp() });
+    const snap = await getDoc(timeSyncRef);
+    if(snap.exists()){
+      const data = snap.data();
+      if(data.ts && typeof data.ts.toMillis === 'function'){
+        const serverMs = data.ts.toMillis();
+        const afterLocal = Date.now();
+        const roundTripGuess = (beforeLocal + afterLocal) / 2; // crude latency compensation
+        serverTimeOffsetMs = serverMs - roundTripGuess;
+        serverTimeReady = true;
+        render(); // re-render once we have a trustworthy clock, so expiry filtering is accurate
+      }
+    }
+  }catch(e){
+    console.error('Server time sync failed, falling back to device clock:', e);
+    // fail-safe: if we truly cannot reach the server, fall back to local time
+    // rather than breaking the whole site — better degraded than broken.
+    serverTimeReady = true;
+  }
 }
 
 function showSyncBadge(msg){
@@ -1088,7 +1096,6 @@ function render(){
   renderSchedule();
   renderExams();
   renderAlerts();
-  renderPayments();
   renderNews();
   renderContact();
   renderTeachers();
@@ -1294,44 +1301,18 @@ function renderAlerts(){
     </div>`).join('');
 }
 
-function renderPayments(){
-  const g=document.getElementById('paymentsGrid');
-  if(!DB.payments.length){g.innerHTML='<div class="empty-state"><div class="e-icon">💰</div><p>لا توجد رسوم مضافة</p></div>';return;}
-  const today=new Date();today.setHours(0,0,0,0);
-  const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short',year:'numeric'});
-  g.innerHTML=DB.payments.map(p=>{
-    const dl=new Date(p.deadline);
-    const days=Math.ceil((dl-today)/86400000);
-    const pct=Math.max(0,Math.min(100,100-Math.round(days/30*100)));
-    const urgent=p.urgent||days<=7;
-    const bank=DB.bankInfo||{};
-    return `<div class="pay-card${urgent?' urgent':''}">
-      <div class="pay-hd"><span class="pay-title">${p.title}</span>${urgent?'<span style="color:var(--red);font-size:10px;font-weight:700;">⚠️ عاجل</span>':''}</div>
-      <div class="pay-amt">${p.amount} <small>${p.currency}</small></div>
-      <div class="pay-rows">
-        <div class="pay-row"><span>📅 الموعد النهائي</span><span>${fmt(dl)}</span></div>
-        <div class="pay-row"><span>⏳ المتبقي</span><span style="color:${days<=7?'var(--red)':days<=14?'var(--gold)':'var(--green)'}">${days>0?days+' يوم':'انتهى'}</span></div>
-        <div class="pay-row"><span>💳 طريقة الدفع</span><span>${p.method}</span></div>
-      </div>
-      <div class="deadline-bar"><div class="deadline-fill${days<=7?' red':''}" style="width:${pct}%"></div></div>
-      ${p.note?`<div class="pay-note">📌 ${p.note}</div>`:''}
-      ${bank.accountNumber?`
-      <div class="bank-info-box">
-        <div class="bank-info-title">🏦 بيانات الحساب البنكي</div>
-        <div class="bank-info-row"><span>البنك</span><span>${bank.bankName||'—'}</span></div>
-        <div class="bank-info-row"><span>رقم الحساب</span><span class="bank-num">${bank.accountNumber}</span></div>
-        <div class="bank-info-row"><span>الاسم</span><span>${bank.accountName||'—'}</span></div>
-        ${bank.note?`<div class="bank-info-note">📝 ${bank.note}</div>`:''}
-      </div>`:''}
-    </div>`;
-  }).join('');
-}
-
 function renderNews(){
   const g=document.getElementById('newsGrid');
-  if(!DB.news.length){g.innerHTML='<div class="empty-state"><div class="e-icon">📰</div><p>لا توجد أخبار</p></div>';return;}
   const fmt=d=>new Date(d).toLocaleDateString('ar-SA',{day:'numeric',month:'short',year:'numeric'});
-  g.innerHTML=DB.news.map(n=>`
+  // filter out expired announcements using the tamper-proof server clock, not the device's local time
+  const nowMs = getServerNow();
+  const visible = DB.news.filter(n=>{
+    if(!n.expiry) return true; // no expiry set = never expires
+    const expiryMs = new Date(n.expiry+'T23:59:59').getTime();
+    return nowMs <= expiryMs;
+  });
+  if(!visible.length){g.innerHTML='<div class="empty-state"><div class="e-icon">📰</div><p>لا توجد أخبار حالياً</p></div>';return;}
+  g.innerHTML=visible.map(n=>`
     <div class="news-card">
       <div class="news-thumb">${n.icon}</div>
       <div class="news-body">
@@ -1353,6 +1334,17 @@ function renderContact(){
     <div class="cont-card"><div class="cont-icon">📘</div><h4>فيسبوك</h4><p>صفحتنا الرسمية</p><a href="${c.facebook||'#'}" class="cont-link" target="_blank">متابعة</a></div>
     <div class="cont-card"><div class="cont-icon">🤖</div><h4>بوت الأسئلة الآلي</h4><p>إجابات فورية على استفساراتك</p><a href="${c.telegramBot||'#'}" class="cont-link" target="_blank">فتح البوت</a></div>
     <div class="cont-card"><div class="cont-icon">📧</div><h4>البريد</h4><p>${c.email||'—'}</p><a href="mailto:${c.email}" class="cont-link">إرسال</a></div>`;
+  const bankEl=document.getElementById('bankInfoDisplay');
+  if(bankEl){
+    bankEl.innerHTML = b.accountNumber ? `
+      <div class="bank-info-box">
+        <div class="bank-info-title">🏦 بيانات الحساب البنكي للدفع</div>
+        <div class="bank-info-row"><span>البنك</span><span>${b.bankName||'—'}</span></div>
+        <div class="bank-info-row"><span>رقم الحساب</span><span class="bank-num">${b.accountNumber}</span></div>
+        <div class="bank-info-row"><span>الاسم</span><span>${b.accountName||'—'}</span></div>
+        ${b.note?`<div class="bank-info-note">📝 ${b.note}</div>`:''}
+      </div>` : '';
+  }
   document.getElementById('c-whatsapp').value=c.whatsapp||'';
   document.getElementById('c-whatsappChannel').value=c.whatsappChannel||'';
   document.getElementById('c-email').value=c.email||'';
@@ -1364,25 +1356,9 @@ function renderContact(){
   document.getElementById('bk-number').value=b.accountNumber||'';
   document.getElementById('bk-owner').value=b.accountName||'';
   document.getElementById('bk-note').value=b.note||'';
-  renderFooterSocials();
-}
-
-function renderFooterSocials(){
-  const el=document.getElementById('ftSocials');
-  if(!el) return;
-  const c=DB.contact||{};
-  const items=[
-    {icon:'💬', link:c.whatsapp, label:'واتساب'},
-    {icon:'📘', link:c.facebook, label:'فيسبوك'},
-    {icon:'🤖', link:c.telegramBot, label:'بوت تيليغرام'},
-    {icon:'📢', link:c.whatsappChannel, label:'قناة واتساب'}
-  ];
-  el.innerHTML = items.map(it=>{
-    const has = it.link && it.link!=='#';
-    return has
-      ? `<a href="${it.link}" target="_blank" class="soc" title="${it.label}">${it.icon}</a>`
-      : `<span class="soc" style="opacity:.35;cursor:not-allowed" title="لم يُضف بعد">${it.icon}</span>`;
-  }).join('');
+  // keep the navbar register button's real href in sync (real <a> tag, not JS-driven, for reliable navigation)
+  const navBtn=document.getElementById('navRegisterBtn');
+  if(navBtn) navBtn.href = (c.register && c.register!=='#') ? c.register : 'javascript:void(0)';
 }
 
 function renderSettings(){
@@ -1463,22 +1439,12 @@ function renderAdminLists(){
       <div class="admin-item-actions"><button class="btn-del" onclick="delItem('alerts',${a.id})">حذف</button></div>
     </div>`).join('');
 
-  // Payments
-  document.getElementById('payments-list').innerHTML=DB.payments.map(p=>`
-    <div class="admin-item">
-      <div class="admin-item-info">
-        <div class="admin-item-title">${p.title} — ${p.amount} ${p.currency}</div>
-        <div class="admin-item-sub">الموعد: ${p.deadline} • ${p.method}</div>
-      </div>
-      <div class="admin-item-actions"><button class="btn-del" onclick="delItem('payments',${p.id})">حذف</button></div>
-    </div>`).join('');
-
   // News
   document.getElementById('news-list').innerHTML=DB.news.map(n=>`
     <div class="admin-item">
       <div class="admin-item-info">
         <div class="admin-item-title">${n.icon} ${n.title}</div>
-        <div class="admin-item-sub">${n.cat} • ${n.date}</div>
+        <div class="admin-item-sub">${n.cat} • ${n.date}${n.expiry?' • ينتهي: '+n.expiry:''}</div>
       </div>
       <div class="admin-item-actions"><button class="btn-del" onclick="delItem('news',${n.id})">حذف</button></div>
     </div>`).join('');
@@ -1562,21 +1528,12 @@ function addAlert(){
   alert('✅ تم نشر التنبيه!');
 }
 
-function addPayment(){
-  const t=document.getElementById('py-title').value.trim();
-  if(!t){alert('أدخل عنوان الرسوم');return;}
-  DB.payments.push({id:nextId(DB.payments),title:t,amount:document.getElementById('py-amount').value.trim()||'0',currency:document.getElementById('py-currency').value.trim()||'دولار',deadline:document.getElementById('py-deadline').value||new Date().toISOString().split('T')[0],method:document.getElementById('py-method').value.trim()||'واتساب',urgent:document.getElementById('py-urgent').value==='true',note:document.getElementById('py-note').value.trim()});
-  save();render();
-  ['py-title','py-amount','py-currency','py-deadline','py-method','py-note'].forEach(id=>document.getElementById(id).value='');
-  alert('✅ تمت إضافة الرسوم!');
-}
-
 function addNews(){
   const t=document.getElementById('n-title').value.trim();
   if(!t){alert('أدخل عنوان الخبر');return;}
-  DB.news.unshift({id:nextId(DB.news),title:t,cat:document.getElementById('n-cat').value,icon:document.getElementById('n-icon').value||'📢',date:document.getElementById('n-date').value||new Date().toISOString().split('T')[0],content:document.getElementById('n-content').value.trim()});
+  DB.news.unshift({id:nextId(DB.news),title:t,cat:document.getElementById('n-cat').value,icon:document.getElementById('n-icon').value||'📢',date:document.getElementById('n-date').value||new Date().toISOString().split('T')[0],expiry:document.getElementById('n-expiry').value||null,content:document.getElementById('n-content').value.trim()});
   save();render();
-  ['n-title','n-icon','n-date','n-content'].forEach(id=>document.getElementById(id).value='');
+  ['n-title','n-icon','n-date','n-expiry','n-content'].forEach(id=>document.getElementById(id).value='');
   alert('✅ تم نشر الخبر!');
 }
 
@@ -1758,6 +1715,7 @@ document.getElementById('todayDate').textContent=`${dw[nd.getDay()]} ${nd.getDat
 load();render(); // instant paint from local backup (or defaults) — no blank screen
 initCloudSync();  // then connect to Firestore; live updates will re-render automatically
 initAuth();       // listen for Google sign-in state
+initServerTimeSync(); // get a tamper-proof clock independent of the device's local time
 // open class selector expanded on first load
 document.getElementById('csExpanded').classList.add('open');
 </script>
