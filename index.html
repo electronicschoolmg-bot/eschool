@@ -71,6 +71,18 @@ nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 16px;d
 .btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
 .dark-btn{background:var(--card);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
 
+/* MOBILE HAMBURGER MENU */
+.hamburger-btn{display:none;background:var(--card);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:7px;align-items:center;justify-content:center;cursor:pointer;font-size:18px;}
+.mobile-menu{display:none;position:fixed;top:0;right:0;bottom:0;width:78%;max-width:300px;background:var(--bg2);z-index:500;box-shadow:-8px 0 30px rgba(0,0,0,.4);transform:translateX(100%);transition:transform .25s ease;flex-direction:column;padding:16px;overflow-y:auto;}
+.mobile-menu.open{transform:translateX(0);}
+.mobile-menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:499;}
+.mobile-menu-overlay.open{display:block;}
+.mobile-menu-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.mobile-menu-close{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25);width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;}
+.mobile-menu ul{list-style:none;display:flex;flex-direction:column;gap:4px;}
+.mobile-menu ul a{display:block;text-decoration:none;color:var(--text);font-size:14px;font-weight:700;padding:12px 14px;border-radius:8px;cursor:pointer;transition:.2s;}
+.mobile-menu ul a:active,.mobile-menu ul a.active{background:rgba(30,144,255,.15);color:var(--accent);}
+
 /* HERO - compact */
 .hero{background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 60%,var(--bg) 100%);padding:36px 16px 28px;text-align:center;position:relative;overflow:hidden;}
 .hero::before{content:'';position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(30,144,255,.06) 0%,transparent 70%);pointer-events:none;}
@@ -265,7 +277,8 @@ footer{background:var(--bg2);border-top:2px solid var(--accent);padding:28px 16p
 .ft-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px;margin-bottom:20px;}
 .ft-brand p{font-size:12px;color:var(--muted);line-height:1.7;margin-top:10px;margin-bottom:14px;white-space:pre-line;}
 .ft-socials{display:flex;gap:6px;}
-.soc{width:30px;height:30px;background:var(--card);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;}
+.soc{width:30px;height:30px;background:var(--card);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;text-decoration:none;transition:.2s;}
+.soc:hover{transform:translateY(-2px);}
 .soc:hover{border-color:var(--accent);}
 .ft-col h5{font-size:12px;font-weight:800;color:#fff;margin-bottom:10px;}
 .ft-col ul{list-style:none;display:flex;flex-direction:column;gap:6px;}
@@ -352,6 +365,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
 /* RESPONSIVE */
 @media(max-width:768px){
   .nav-links{display:none;}
+  .hamburger-btn{display:flex;}
   .ft-grid{grid-template-columns:1fr;gap:20px;}
   .form-grid{grid-template-columns:1fr;}
   .form-group.full{grid-column:1;}
@@ -410,8 +424,29 @@ html,body{overflow-x:hidden;max-width:100vw;}
     <button class="dark-btn" onclick="toggleTheme()">🌙</button>
     <button class="btn-admin" onclick="openAdmin()">⚙️ لوحة التحكم</button>
     <button class="btn-join" id="navRegisterBtn" onclick="openRegisterLink()">🚀 التسجيل</button>
+    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
   </div>
 </nav>
+
+<!-- MOBILE MENU (shown on phones instead of the hidden top nav-links) -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu-header">
+    <strong style="color:#fff;font-size:14px;">📑 القائمة</strong>
+    <div class="mobile-menu-close" onclick="closeMobileMenu()">✕</div>
+  </div>
+  <ul>
+    <li><a onclick="scrollTo2('home')">🏠 الرئيسية</a></li>
+    <li><a onclick="scrollTo2('subjects')">📚 المواد</a></li>
+    <li><a onclick="scrollTo2('teachers')">👨‍🏫 المعلمون</a></li>
+    <li><a onclick="scrollTo2('schedule')">📅 الجدول</a></li>
+    <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
+    <li><a onclick="scrollTo2('alerts')">🔔 التنبيهات</a></li>
+    <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
+    <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
+    <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
+  </ul>
+</div>
 
 <!-- CLASS SELECTOR (sticky, collapses after selection) -->
 <div class="class-selector" id="classSelector">
@@ -554,10 +589,21 @@ html,body{overflow-x:hidden;max-width:100vw;}
     <div class="ft-brand">
       <div class="logo"><div class="logo-icon">ES</div><div><div class="logo-ar">المدرسة الإلكترونية</div><div class="logo-en">E-SCHOOL</div></div></div>
       <p id="footerDesc">مدرسة إلكترونية متكاملة تقدم تعليماً عالي الجودة لجميع المراحل الدراسية.</p>
-      <div class="ft-socials"><div class="soc">💬</div><div class="soc">📘</div><div class="soc">🎥</div><div class="soc">📸</div></div>
+      <div class="ft-socials" id="ftSocials"></div>
     </div>
-    <div class="ft-col"><h5>روابط سريعة</h5><ul><li><a href="#">🏠 الرئيسية</a></li><li><a href="#">📚 المواد</a></li><li><a href="#">📝 الامتحانات</a></li><li><a href="#">💰 الرسوم</a></li><li><a href="#">📢 الأخبار</a></li></ul></div>
-    <div class="ft-col"><h5>معلومات</h5><ul><li><a href="#">🎓 عن المدرسة</a></li><li><a href="#">👨‍🏫 المعلمون</a></li><li><a href="#">📋 شروط الالتحاق</a></li><li><a href="#">📞 تواصل</a></li></ul></div>
+    <div class="ft-col"><h5>روابط سريعة</h5><ul>
+      <li><a onclick="scrollTo2('home')">🏠 الرئيسية</a></li>
+      <li><a onclick="scrollTo2('subjects')">📚 المواد</a></li>
+      <li><a onclick="scrollTo2('exams')">📝 الامتحانات</a></li>
+      <li><a onclick="scrollTo2('payments')">💰 الرسوم</a></li>
+      <li><a onclick="scrollTo2('news')">📢 الأخبار</a></li>
+    </ul></div>
+    <div class="ft-col"><h5>معلومات</h5><ul>
+      <li><a onclick="scrollTo2('home')">🎓 عن المدرسة</a></li>
+      <li><a onclick="scrollTo2('teachers')">👨‍🏫 المعلمون</a></li>
+      <li><a onclick="openRegisterLink()">📋 شروط الالتحاق</a></li>
+      <li><a onclick="scrollTo2('contact')">📞 تواصل</a></li>
+    </ul></div>
   </div>
   <div class="ft-bottom"><span>© 2025 المدرسة الإلكترونية — E-School</span><span>صُنع بـ ❤️ للتعليم</span></div>
 </footer>
@@ -1318,6 +1364,25 @@ function renderContact(){
   document.getElementById('bk-number').value=b.accountNumber||'';
   document.getElementById('bk-owner').value=b.accountName||'';
   document.getElementById('bk-note').value=b.note||'';
+  renderFooterSocials();
+}
+
+function renderFooterSocials(){
+  const el=document.getElementById('ftSocials');
+  if(!el) return;
+  const c=DB.contact||{};
+  const items=[
+    {icon:'💬', link:c.whatsapp, label:'واتساب'},
+    {icon:'📘', link:c.facebook, label:'فيسبوك'},
+    {icon:'🤖', link:c.telegramBot, label:'بوت تيليغرام'},
+    {icon:'📢', link:c.whatsappChannel, label:'قناة واتساب'}
+  ];
+  el.innerHTML = items.map(it=>{
+    const has = it.link && it.link!=='#';
+    return has
+      ? `<a href="${it.link}" target="_blank" class="soc" title="${it.label}">${it.icon}</a>`
+      : `<span class="soc" style="opacity:.35;cursor:not-allowed" title="لم يُضف بعد">${it.icon}</span>`;
+  }).join('');
 }
 
 function renderSettings(){
@@ -1564,36 +1629,26 @@ function initAuth(){
   if(!window.__firebase){ setTimeout(initAuth,300); return; }
   const { fbAuth, onAuthStateChanged, getRedirectResult, ADMIN_EMAIL } = window.__firebase;
 
-  // catch the result of a redirect-based sign-in (page just came back from Google)
-  getRedirectResult(fbAuth).then((result)=>{
-    if(result && result.user){
-      if(result.user.email !== ADMIN_EMAIL){
-        window.__firebase.signOut(fbAuth);
-        alert('❌ هذا الحساب غير مصرّح له بإدارة الموقع.');
-      } else if(sessionStorage.getItem('eschool_wants_admin') === '1'){
-        sessionStorage.removeItem('eschool_wants_admin');
-        // onAuthStateChanged below will set isAdminUnlocked; open panel once it does
-        const tryOpen = setInterval(()=>{
-          if(isAdminUnlocked){
-            document.getElementById('adminOverlay').classList.add('open');
-            clearInterval(tryOpen);
-          }
-        },150);
-        setTimeout(()=>clearInterval(tryOpen),5000);
-      }
-    }
-  }).catch((err)=>{
+  // log any redirect errors for debugging, but don't depend on this for opening the panel
+  getRedirectResult(fbAuth).catch((err)=>{
     console.error('Redirect sign-in error:', err);
   });
 
+  // single source of truth: whenever Firebase confirms who is signed in (on load,
+  // after a redirect return, or any time), react accordingly — no sessionStorage needed
   onAuthStateChanged(fbAuth, (user)=>{
     if(user && user.email === ADMIN_EMAIL){
+      const wasUnlocked = isAdminUnlocked;
       isAdminUnlocked = true;
       currentUserEmail = user.email;
       document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
       document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
       const disp=document.getElementById('adminEmailDisplay');
       if(disp) disp.textContent=user.email;
+      // if this is a fresh sign-in (we just came back from Google), open the panel automatically
+      if(!wasUnlocked){
+        document.getElementById('adminOverlay').classList.add('open');
+      }
     } else {
       isAdminUnlocked = false;
       currentUserEmail = user ? user.email : null;
@@ -1614,11 +1669,10 @@ function openAdmin(){
     return;
   }
   if(!window.__firebase){ alert('⏳ جارٍ تحميل النظام، حاول بعد ثوانٍ'); return; }
-  // remember that the user wanted the admin panel, so we can auto-open it after the redirect comes back
-  sessionStorage.setItem('eschool_wants_admin','1');
   const { fbAuth, googleProvider, signInWithRedirect } = window.__firebase;
   signInWithRedirect(fbAuth, googleProvider);
-  // the page will navigate away to Google's sign-in page now, and come back automatically
+  // the page will navigate away to Google's sign-in page now, and come back automatically;
+  // onAuthStateChanged above will detect the new session and open the panel itself
 }
 
 function adminSignOut(){
@@ -1636,7 +1690,16 @@ function adminTab(n){
   document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+n).classList.add('active');
 }
-function scrollTo2(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});closeAdmin();}
+function scrollTo2(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth'});closeAdmin();closeMobileMenu();}
+
+function toggleMobileMenu(){
+  document.getElementById('mobileMenu').classList.toggle('open');
+  document.getElementById('mobileMenuOverlay').classList.toggle('open');
+}
+function closeMobileMenu(){
+  document.getElementById('mobileMenu').classList.remove('open');
+  document.getElementById('mobileMenuOverlay').classList.remove('open');
+}
 function goHome(){window.scrollTo({top:0,behavior:'smooth'});}
 
 function openRegisterLink(){
