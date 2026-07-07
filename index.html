@@ -51,7 +51,7 @@
   // ===== FIREBASE SETUP =====
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDiy20XiFV8l2jnxedKGfdXf5Xsa5hAXWg",
@@ -76,7 +76,7 @@
     const ADMIN_EMAIL = "0902301167c@gmail.com";
 
     // expose to the regular (non-module) script below
-    window.__firebase = { fbDb, schoolDocRef, timeSyncRef, getDoc, setDoc, onSnapshot, serverTimestamp, fbAuth, googleProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, ADMIN_EMAIL };
+    window.__firebase = { fbDb, schoolDocRef, timeSyncRef, getDoc, setDoc, onSnapshot, serverTimestamp, fbAuth, googleProvider, signInWithPopup, signOut, onAuthStateChanged, ADMIN_EMAIL };
   } catch(initErr) {
     if(!window.__errors) window.__errors = [];
     window.__errors.push('Firebase init failed: ' + initErr.message);
@@ -1750,34 +1750,22 @@ let currentUserEmail = null;
 
 function initAuth(){
   if(!window.__firebase){ setTimeout(initAuth,300); return; }
-  const { fbAuth, onAuthStateChanged, getRedirectResult, ADMIN_EMAIL } = window.__firebase;
+  const { fbAuth, onAuthStateChanged, ADMIN_EMAIL } = window.__firebase;
 
-  // log any redirect errors for debugging, but don't depend on this for opening the panel
-  getRedirectResult(fbAuth).catch((err)=>{
-    console.error('Redirect sign-in error:', err);
-  });
-
-  // single source of truth: whenever Firebase confirms who is signed in (on load,
-  // after a redirect return, or any time), react accordingly — no sessionStorage needed
+  // single source of truth: whenever Firebase confirms who is signed in, react accordingly
   onAuthStateChanged(fbAuth, (user)=>{
     if(user && user.email === ADMIN_EMAIL){
-      const wasUnlocked = isAdminUnlocked;
       isAdminUnlocked = true;
       currentUserEmail = user.email;
       document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
       document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
       const disp=document.getElementById('adminEmailDisplay');
       if(disp) disp.textContent=user.email;
-      // if this is a fresh sign-in (we just came back from Google), open the panel automatically
-      if(!wasUnlocked){
-        document.getElementById('adminOverlay').classList.add('open');
-      }
     } else {
       isAdminUnlocked = false;
       currentUserEmail = user ? user.email : null;
       document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='none');
       document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='none');
-      // if a non-admin Google account is signed in, sign them back out
       if(user && user.email !== ADMIN_EMAIL){
         window.__firebase.signOut(fbAuth);
         alert('⚠️ هذا الحساب ليس حساب الإدارة المعتمد. تم تسجيل الخروج.');
@@ -1792,10 +1780,26 @@ function openAdmin(){
     return;
   }
   if(!window.__firebase){ alert('⏳ جارٍ تحميل النظام، حاول بعد ثوانٍ'); return; }
-  const { fbAuth, googleProvider, signInWithRedirect } = window.__firebase;
-  signInWithRedirect(fbAuth, googleProvider);
-  // the page will navigate away to Google's sign-in page now, and come back automatically;
-  // onAuthStateChanged above will detect the new session and open the panel itself
+  const { fbAuth, googleProvider, signInWithPopup, ADMIN_EMAIL } = window.__firebase;
+  signInWithPopup(fbAuth, googleProvider)
+    .then((result)=>{
+      if(result.user.email === ADMIN_EMAIL){
+        isAdminUnlocked = true;
+        document.getElementById('adminOverlay').classList.add('open');
+        document.querySelectorAll('.sch-admin-col').forEach(el=>el.style.display='');
+        document.querySelectorAll('.sch-edit-btn,.sch-del-btn').forEach(el=>el.style.display='');
+      } else {
+        window.__firebase.signOut(fbAuth);
+        alert('❌ هذا الحساب غير مصرّح له بإدارة الموقع.');
+      }
+    })
+    .catch((err)=>{
+      if(err.code === 'auth/popup-blocked'){
+        alert('⚠️ المتصفح حجب النافذة المنبثقة. اسمح بالنوافذ المنبثقة لهذا الموقع من إعدادات المتصفح وحاول مرة أخرى.');
+      } else if(err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request'){
+        alert('⚠️ تعذّر تسجيل الدخول: '+err.message);
+      }
+    });
 }
 
 function adminSignOut(){
