@@ -107,18 +107,19 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 .topbar-date{color:var(--accent2);white-space:nowrap;font-size:11px;flex-shrink:0;}
 
 /* NAVBAR */
-nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(30,144,255,.15);gap:8px;}
-.logo{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;flex-shrink:0;}
-.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;box-shadow:0 0 12px rgba(30,144,255,.4);}
-.logo-ar{font-size:12px;font-weight:900;}
-.logo-en{font-size:8px;color:var(--accent);letter-spacing:1.5px;font-weight:700;}
-.nav-right{display:flex;gap:5px;align-items:center;flex-shrink:0;}
-.btn-admin{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.3);padding:5px 9px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
-.btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:6px 11px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none;white-space:nowrap;}
-.dark-btn{background:var(--card);border:1.5px solid var(--accent);color:var(--gold);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 8px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;box-shadow:0 4px 20px rgba(30,144,255,.15);gap:5px;}
+.logo{display:flex;align-items:center;gap:6px;padding:6px 0;cursor:pointer;flex-shrink:1;min-width:0;overflow:hidden;}
+.logo-icon{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;box-shadow:0 0 12px rgba(30,144,255,.4);flex-shrink:0;}
+.logo-text{min-width:0;overflow:hidden;}
+.logo-ar{font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.logo-en{font-size:10px;color:var(--accent);letter-spacing:1px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-right{display:flex;gap:4px;align-items:center;flex-shrink:0;}
+.btn-admin{background:rgba(245,197,24,.15);color:var(--gold);border:1px solid rgba(245,197,24,.3);padding:4px 7px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:9px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;}
+.btn-join{background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:5px 9px;border-radius:6px;font-family:'Cairo',sans-serif;font-size:9px;font-weight:700;cursor:pointer;display:inline-block;text-decoration:none;white-space:nowrap;}
+.dark-btn{background:var(--card);border:1.5px solid var(--accent);color:var(--gold);width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0;}
 
 /* MOBILE HAMBURGER MENU */
-.hamburger-btn{display:flex;background:rgba(30,144,255,.15);border:1px solid rgba(30,144,255,.4);color:var(--accent);width:auto;height:34px;padding:0 10px;border-radius:7px;align-items:center;justify-content:center;gap:4px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;}
+.hamburger-btn{display:flex;background:rgba(30,144,255,.15);border:1px solid rgba(30,144,255,.4);color:var(--accent);width:28px;height:28px;padding:0;border-radius:7px;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:700;flex-shrink:0;}
 .mobile-menu{display:flex;position:fixed;top:0;right:0;bottom:0;width:78%;max-width:300px;background:var(--bg2);z-index:500;box-shadow:-8px 0 30px rgba(0,0,0,.4);transform:translateX(100%);transition:transform .25s ease;flex-direction:column;padding:16px;overflow-y:auto;}
 .mobile-menu.open{transform:translateX(0);}
 .mobile-menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:499;}
@@ -446,17 +447,17 @@ html,body{overflow-x:hidden;max-width:100vw;}
 <!-- NAVBAR -->
 <nav>
   <div class="logo" onclick="goHome()">
-    <div class="logo-icon">ES</div>
-    <div>
-      <div class="logo-ar">المدرسة الإلكترونية</div>
-      <div class="logo-en">E-SCHOOL</div>
+    <div class="logo-icon" id="navSchoolAbbr">ES</div>
+    <div class="logo-text">
+      <div class="logo-ar" id="navSchoolNameAr">المدرسة الإلكترونية</div>
+      <div class="logo-en" id="navSchoolNameEn">E-SCHOOL</div>
     </div>
   </div>
   <div class="nav-right">
     <button class="dark-btn" onclick="toggleTheme()">🌙</button>
     <button class="btn-admin" onclick="openAdmin()">⚙️ لوحة التحكم</button>
     <a class="btn-join" id="navRegisterBtn" href="javascript:void(0)" onclick="openRegisterLink();return false;">🚀 التسجيل</a>
-    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰ القائمة</button>
+    <button class="hamburger-btn" onclick="toggleMobileMenu()">☰</button>
   </div>
 </nav>
 
@@ -835,6 +836,7 @@ html,body{overflow-x:hidden;max-width:100vw;}
         <div class="admin-note">🔐 <strong>مسجّل دخولك بحساب:</strong> <span id="adminEmailDisplay">—</span><br>الحماية الآن عبر حساب Google الخاص بك فقط — لا توجد كلمة مرور مكشوفة.</div>
         <div class="form-grid">
           <div class="form-group"><label>اسم المدرسة</label><input type="text" id="set-name" placeholder="المدرسة الإلكترونية"></div>
+          <div class="form-group"><label>الاسم بالإنجليزية</label><input type="text" id="set-nameEn" placeholder="E-SCHOOL"></div>
           <div class="form-group"><label>الاختصار</label><input type="text" id="set-abbr" placeholder="ES" maxlength="3"></div>
           <div class="form-group"><label>عدد الطلاب</label><input type="number" id="set-students" placeholder="500"></div>
           <div class="form-group full"><label>شريط الأخبار العاجلة</label><input type="text" id="set-ticker" placeholder="مرحباً بكم..."></div>
@@ -925,7 +927,7 @@ let DB = {
     {id:3,icon:'🎥',title:'٣. احضر الدروس',desc:'احضر مباشرة عبر Zoom أو Google Meet'},
     {id:4,icon:'✅',title:'٤. أدِّ الامتحان',desc:'امتحانات إلكترونية مع نتيجة فورية'}
   ],
-  settings:{name:'مدارس كامبردج سيتي العالمية - القسم العربي',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم — تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
+  settings:{name:'مدارس كامبردج سيتي العالمية - القسم العربي',nameEn:'E-SCHOOL',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم — تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
 };
 
 let selectedClassId = null;
@@ -1443,14 +1445,21 @@ function renderSettings(){
   const s=DB.settings;
   document.getElementById('heroDesc').textContent=s.desc;
   document.getElementById('footerDesc').textContent=s.desc;
+  // dynamic school name in the top navbar (was previously hardcoded and never updated)
+  const navAr=document.getElementById('navSchoolNameAr');
+  const navEn=document.getElementById('navSchoolNameEn');
+  if(navAr) navAr.textContent=s.name||'المدرسة الإلكترونية';
+  if(navEn) navEn.textContent=s.nameEn||'E-SCHOOL';
+  const navAbbr=document.getElementById('navSchoolAbbr');
+  if(navAbbr) navAbbr.textContent=s.abbr||'ES';
   // single source of truth for teacher count everywhere: the real teachers array, never a manually-typed number
   const realTeacherCount = (DB.teachers && DB.teachers.length) || 0;
   document.getElementById('statTeachers').innerHTML=realTeacherCount+'<em>+</em>';
   document.getElementById('statClasses').textContent=DB.classes.length;
   document.getElementById('statSubjects2').innerHTML=DB.subjects.length+'<em>+</em>';
   document.getElementById('scheduleNote').textContent=s.schednote||'UTC+3';
-  ['set-name','set-abbr','set-students','set-desc','set-schednote'].forEach(id=>{
-    const map={name:'name',abbr:'abbr',students:'students',desc:'desc',schednote:'schednote'};
+  ['set-name','set-nameEn','set-abbr','set-students','set-desc','set-schednote'].forEach(id=>{
+    const map={name:'name',nameEn:'nameEn',abbr:'abbr',students:'students',desc:'desc',schednote:'schednote'};
     document.getElementById(id).value=s[map[id.replace('set-','')]]||'';
   });
   document.getElementById('set-ticker').value=DB.ticker||'';
@@ -1688,7 +1697,7 @@ function saveBankInfo(){
 
 function saveSettings(){
   DB.ticker=document.getElementById('set-ticker').value;
-  DB.settings={name:document.getElementById('set-name').value,abbr:document.getElementById('set-abbr').value,students:document.getElementById('set-students').value,desc:document.getElementById('set-desc').value,schednote:document.getElementById('set-schednote').value};
+  DB.settings={name:document.getElementById('set-name').value,nameEn:document.getElementById('set-nameEn').value,abbr:document.getElementById('set-abbr').value,students:document.getElementById('set-students').value,desc:document.getElementById('set-desc').value,schednote:document.getElementById('set-schednote').value};
   save();render();
   alert('✅ تم الحفظ!');
 }
@@ -1738,7 +1747,33 @@ function resetToDefaults(){
     ];
   }
   if(!DB.settings||!DB.settings.name){
-    DB.settings={name:'مدارس كامبردج سيتي العالمية - القسم العربي',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم.',schednote:'التوقيت UTC+3'};
+    DB.settings={name:'مدارس كامبردج سيتي العالمية - القسم العربي',nameEn:'E-SCHOOL',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم.',schednote:'التوقيت UTC+3'};
+  }
+  if(!Array.isArray(DB.classes)||!DB.classes.length){
+    DB.classes=[
+      {id:1,name:'الصف الأول الابتدائي',level:'primary',desc:''},
+      {id:2,name:'الصف الثاني الابتدائي',level:'primary',desc:''},
+      {id:3,name:'الصف الثالث الابتدائي',level:'primary',desc:''},
+      {id:4,name:'الصف الرابع الابتدائي',level:'primary',desc:''},
+      {id:5,name:'الصف الخامس الابتدائي',level:'primary',desc:''},
+      {id:6,name:'الصف السادس الابتدائي',level:'primary',desc:''},
+      {id:7,name:'الصف الأول الإعدادي',level:'middle',desc:''},
+      {id:8,name:'الصف الثاني الإعدادي',level:'middle',desc:''},
+      {id:9,name:'الصف الثالث الإعدادي',level:'middle',desc:''},
+      {id:10,name:'الصف الأول الثانوي',level:'secondary',desc:''},
+      {id:11,name:'الصف الثاني الثانوي',level:'secondary',desc:''},
+      {id:12,name:'الصف الثالث الثانوي',level:'secondary',desc:''}
+    ];
+  }
+  if(!Array.isArray(DB.subjects)||!DB.subjects.length){
+    DB.subjects=[
+      {id:1,name:'الرياضيات',icon:'🔢',classId:1,lessons:24,teacher:'أ. محمد'},
+      {id:2,name:'العلوم',icon:'🧪',classId:1,lessons:18,teacher:'أ. أحمد'},
+      {id:3,name:'اللغة العربية',icon:'📖',classId:1,lessons:20,teacher:'أ. فاطمة'},
+      {id:4,name:'الرياضيات',icon:'🔢',classId:7,lessons:30,teacher:'أ. عمر'},
+      {id:5,name:'الفيزياء',icon:'⚡',classId:10,lessons:28,teacher:'أ. خالد'},
+      {id:6,name:'الكيمياء',icon:'🧬',classId:10,lessons:26,teacher:'أ. سارة'}
+    ];
   }
   save();render();
   alert('✅ تم استعادة البيانات الافتراضية وحفظها في Firebase!');
