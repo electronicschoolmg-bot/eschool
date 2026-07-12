@@ -209,6 +209,12 @@ nav{background:var(--bg2);border-bottom:2px solid var(--accent);padding:0 8px;di
 
 /* TOOLS */
 .tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:11px;}
+/* PROMO MEDIA */
+.promo-grid{display:grid;grid-template-columns:1fr;gap:14px;max-width:640px;margin:0 auto;}
+.promo-video{position:relative;width:100%;padding-bottom:56.25%;border-radius:11px;overflow:hidden;background:#000;}
+.promo-video iframe,.promo-video video{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+.promo-image{width:100%;border-radius:11px;overflow:hidden;}
+.promo-image img{width:100%;display:block;}
 .tool-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:15px;display:flex;align-items:flex-start;gap:11px;transition:.2s;}
 .tool-card:hover{border-color:var(--accent);}
 .tool-logo{width:39px;height:39px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
@@ -552,6 +558,14 @@ html,body{overflow-x:hidden;max-width:100vw;}
   <div class="tools-grid" id="teachersGrid"></div>
 </div>
 
+<!-- PROMO MEDIA (video or image) - fully hidden when empty, zero UI/UX impact -->
+<div class="sec-alt" id="promoSection" style="display:none;">
+  <div class="sec">
+    <div class="sec-hd"><div class="sec-hd-left"><div class="eyebrow">لمحة من مدرستنا</div><h2 class="sec-title" id="promoTitle">فيديو تعريفي</h2></div></div>
+    <div id="promoContent"></div>
+  </div>
+</div>
+
 <!-- SCHEDULE -->
 <div class="sec-alt" id="schedule">
   <div class="sec">
@@ -814,7 +828,6 @@ html,body{overflow-x:hidden;max-width:100vw;}
           <div class="form-group"><label>البريد الإلكتروني</label><input type="text" id="c-email" placeholder="info@eschool.com"></div>
           <div class="form-group"><label>رابط استمارة التسجيل</label><input type="text" id="c-register" placeholder="https://forms.gle/..."></div>
           <div class="form-group"><label>فيسبوك</label><input type="text" id="c-facebook" placeholder="https://facebook.com/..."></div>
-          <div class="form-group"><label>قناة يوتيوب</label><input type="text" id="c-youtube" placeholder="https://youtube.com/..."></div>
           <div class="form-group full"><label>🤖 رابط بوت تيليغرام (للأسئلة الآلية)</label><input type="text" id="c-telegramBot" placeholder="https://t.me/YourBot"></div>
         </div>
         <button class="btn-save" onclick="saveContact()">💾 حفظ</button>
@@ -834,6 +847,14 @@ html,body{overflow-x:hidden;max-width:100vw;}
           <div class="form-group full"><label>ملاحظة الجدول (توقيت)</label><input type="text" id="set-schednote" placeholder="UTC+3"></div>
         </div>
         <button class="btn-save" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        <div class="sep"></div>
+        <div class="admin-note"><strong>🎬 الفيديو/الصورة الإعلانية</strong> — تظهر في قسم "لمحة من مدرستنا". اتركها فارغة لإخفاء القسم بالكامل تلقائياً.</div>
+        <div class="form-grid">
+          <div class="form-group full"><label>عنوان القسم (اختياري)</label><input type="text" id="promo-title" placeholder="لمحة من مدرستنا"></div>
+          <div class="form-group full"><label>رابط فيديو يوتيوب أو رابط ملف فيديو مباشر</label><input type="text" id="promo-video" placeholder="https://youtube.com/watch?v=..."></div>
+          <div class="form-group full"><label>رابط صورة</label><input type="text" id="promo-image" placeholder="https://..."></div>
+        </div>
+        <button class="btn-save" onclick="savePromo()">💾 حفظ الفيديو/الصورة</button>
         <div class="sep"></div>
         <button class="btn-edit" onclick="adminSignOut()">🚪 تسجيل الخروج</button>
         <button class="btn-del" onclick="if(confirm('مسح كل البيانات؟'))clearAll()">🗑️ مسح كل البيانات</button>
@@ -862,61 +883,31 @@ let DB = {
     {id:11,name:'الصف الثاني الثانوي',level:'secondary',desc:''},
     {id:12,name:'الصف الثالث الثانوي',level:'secondary',desc:''}
   ],
-  subjects:[
-    {id:1,name:'الرياضيات',icon:'🔢',classId:1,lessons:24,teacher:'أ. محمد',link:'#'},
-    {id:2,name:'العلوم',icon:'🧪',classId:1,lessons:18,teacher:'أ. أحمد',link:'#'},
-    {id:3,name:'اللغة العربية',icon:'📖',classId:1,lessons:20,teacher:'أ. فاطمة',link:'#'},
-    {id:4,name:'الرياضيات',icon:'🔢',classId:7,lessons:30,teacher:'أ. عمر',link:'#'},
-    {id:5,name:'الفيزياء',icon:'⚡',classId:10,lessons:28,teacher:'أ. خالد',link:'#'},
-    {id:6,name:'الكيمياء',icon:'🧬',classId:10,lessons:26,teacher:'أ. سارة',link:'#'},
-  ],
-  schedule:[
-    {id:1,classId:1,day:'السبت',time:'٤:٠٠ م',subject:'الرياضيات',teacher:'أ. محمد',platform:'📹 Zoom',link:'#'},
-    {id:2,classId:1,day:'الأحد',time:'٤:٠٠ م',subject:'العلوم',teacher:'أ. أحمد',platform:'🎯 Google Meet',link:'#'},
-    {id:3,classId:7,day:'السبت',time:'٥:٠٠ م',subject:'الرياضيات',teacher:'أ. عمر',platform:'📹 Zoom',link:'#'},
-    {id:4,classId:10,day:'الأحد',time:'٦:٠٠ م',subject:'الفيزياء',teacher:'أ. خالد',platform:'📹 Zoom',link:'#'},
-  ],
-  exams:[
-    {id:1,classId:1,subject:'الرياضيات',icon:'🔢',duration:60,questions:30,start:'2025-01-15',end:'2025-01-30',link:'#'},
-    {id:2,classId:7,subject:'الرياضيات',icon:'🔢',duration:90,questions:40,start:'2025-01-18',end:'2025-02-02',link:'#'},
-    {id:3,classId:10,subject:'الفيزياء',icon:'⚡',duration:90,questions:35,start:'2025-02-05',end:'2025-02-15',link:'#'},
-  ],
+  subjects:[],
+  schedule:[],
+  exams:[],
   alerts:[
     {id:1,title:'تذكير بموعد دفع الرسوم',type:'alert-warning',icon:'💰',classId:0,date:'2025-01-10',deadline:'2025-01-31',body:'يرجى من جميع الطلاب دفع رسوم الفصل الأول قبل نهاية يناير لتجنب الحرمان من الامتحانات.'},
     {id:2,title:'امتحان الرياضيات الأسبوع القادم',type:'alert-urgent',icon:'📝',classId:1,date:'2025-01-12',deadline:'2025-01-15',body:'تذكير لطلاب الصف الأول الابتدائي: امتحان الرياضيات يوم الأربعاء القادم الساعة 4 مساءً.'},
     {id:3,title:'إجازة رسمية يوم الخميس',type:'alert-info',icon:'🏖️',classId:0,date:'2025-01-13',deadline:'',body:'تعلم إدارة المدرسة بأن يوم الخميس إجازة رسمية ولن تكون هناك دروس.'},
   ],
-  news:[
-    {id:1,title:'فتح باب التسجيل للفصل الثاني',cat:'إعلان مهم',icon:'🎉',date:'2025-01-15',content:'يسعد الإدارة الإعلان عن فتح باب التسجيل للفصل الثاني. يرجى التسجيل قبل نهاية الشهر.'},
-    {id:2,title:'تكريم أوائل الفصل الأول',cat:'إنجازات',icon:'🏆',date:'2025-01-05',content:'تهنئ إدارة المدرسة أوائل الطلاب على تفوقهم وتتمنى لهم المزيد.'}
-  ],
+  news:[],
   contact:{
     whatsapp:'https://chat.whatsapp.com/LuWucNPNZpVFtRs7VQy',
     email:'electronicschoolmg@gmail.com',
     register:'https://forms.gle/tEohTZudiuWHrdTp6',
-    youtube:'#',
     facebook:'https://www.facebook.com/ccischools',
-    telegram:'#',
     whatsappChannel:'https://whatsapp.com/channel/0029Vab5dpICxoB0C5YXJU0F',
     telegramBot:'https://t.me/CambridgeCityBot'
   },
-  bankInfo:{
-    bankName:'بنك الخرطوم',
-    accountNumber:'2339762',
-    accountName:'أحمد عبيد محمد',
-    note:'يرجى كتابة اسم الطالب والصف والقسط في خانة التعليق عند التحويل — مثال: محمد علي حسن - خامس - قسط1'
-  },
-  teachers:[
-    {id:1,name:'أ. محمد أحمد',subject:'الرياضيات',icon:'🔢',bio:'خبرة 8 سنوات في تدريس الرياضيات لجميع المراحل'},
-    {id:2,name:'أ. فاطمة علي',subject:'اللغة العربية',icon:'📖',bio:'متخصصة في تعليم اللغة العربية وآدابها'},
-    {id:3,name:'أ. خالد إبراهيم',subject:'الفيزياء',icon:'⚡',bio:'معلم فيزياء للمرحلة الثانوية بخبرة واسعة'}
-  ],
+  teachers:[],
   howSteps:[
     {id:1,icon:'📝',title:'١. سجّل حسابك',desc:'سجّل بياناتك واحصل على رابط مجموعتك فوراً'},
     {id:2,icon:'🎯',title:'٢. اختر صفّك',desc:'اختر مرحلتك وصفّك لترى محتواك فقط'},
     {id:3,icon:'🎥',title:'٣. احضر الدروس',desc:'احضر مباشرة عبر Zoom أو Google Meet'},
     {id:4,icon:'✅',title:'٤. أدِّ الامتحان',desc:'امتحانات إلكترونية مع نتيجة فورية'}
   ],
+  promo:{videoUrl:'',imageUrl:'',title:''},
   settings:{name:'مدارس كامبردج سيتي العالمية - القسم العربي',nameEn:'E-SCHOOL',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم — تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
 };
 
@@ -1141,6 +1132,7 @@ function safeDB(){
   arrays.forEach(k=>{ if(!Array.isArray(DB[k])) DB[k]=[]; });
   if(!DB.contact) DB.contact={};
   if(!DB.bankInfo) DB.bankInfo={};
+  if(!DB.promo) DB.promo={videoUrl:'',imageUrl:'',title:''};
   if(!DB.settings) DB.settings={name:'المدرسة الإلكترونية',abbr:'ES',students:'500',desc:'',schednote:'UTC+3'};
   if(!DB.ticker) DB.ticker='';
 }
@@ -1156,6 +1148,7 @@ function render(){
   renderNews();
   renderContact();
   renderTeachers();
+  renderPromo();
   renderPublicStats();
   renderSettings();
   renderAdminLists();
@@ -1208,6 +1201,43 @@ function playNextTicker(){
   tickerIndex++;
   clearTimeout(window.__tickerTimer);
   window.__tickerTimer = setTimeout(playNextTicker, duration*1000 + 400); // small pause between alerts
+}
+
+function getYouTubeEmbedUrl(url){
+  if(!url) return null;
+  let match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{6,})/);
+  if(match && match[1]) return `https://www.youtube.com/embed/${match[1]}`;
+  return null; // not a recognizable YouTube link
+}
+
+function renderPromo(){
+  const section=document.getElementById('promoSection');
+  const content=document.getElementById('promoContent');
+  const titleEl=document.getElementById('promoTitle');
+  if(!section||!content) return;
+  const p=DB.promo||{};
+  const hasVideo = p.videoUrl && p.videoUrl.trim()!=='';
+  const hasImage = p.imageUrl && p.imageUrl.trim()!=='';
+  if(!hasVideo && !hasImage){
+    section.style.display='none'; // completely hidden — zero UI/UX impact when empty
+    return;
+  }
+  section.style.display='';
+  if(titleEl) titleEl.textContent = p.title && p.title.trim() ? p.title : 'لمحة من مدرستنا';
+  let html='<div class="promo-grid">';
+  if(hasVideo){
+    const yt=getYouTubeEmbedUrl(p.videoUrl.trim());
+    if(yt){
+      html+=`<div class="promo-video"><iframe src="${yt}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    } else {
+      html+=`<div class="promo-video"><video src="${p.videoUrl.trim()}" controls></video></div>`;
+    }
+  }
+  if(hasImage){
+    html+=`<div class="promo-image"><img src="${p.imageUrl.trim()}" alt="صورة إعلانية" loading="lazy"></div>`;
+  }
+  html+='</div>';
+  content.innerHTML=html;
 }
 
 function renderTeachers(){
@@ -1411,7 +1441,6 @@ function renderContact(){
   document.getElementById('c-email').value=c.email||'';
   document.getElementById('c-register').value=c.register||'';
   document.getElementById('c-facebook').value=c.facebook||'';
-  document.getElementById('c-youtube').value=c.youtube||'';
   document.getElementById('c-telegramBot').value=c.telegramBot||'';
 }
 
@@ -1437,6 +1466,10 @@ function renderSettings(){
     document.getElementById(id).value=s[map[id.replace('set-','')]]||'';
   });
   document.getElementById('set-ticker').value=DB.ticker||'';
+  const p=DB.promo||{};
+  document.getElementById('promo-title').value=p.title||'';
+  document.getElementById('promo-video').value=p.videoUrl||'';
+  document.getElementById('promo-image').value=p.imageUrl||'';
 }
 
 function renderAdminLists(){
@@ -1638,7 +1671,6 @@ function saveContact(){
     whatsappChannel:fixUrl(document.getElementById('c-whatsappChannel').value.trim()),
     email:document.getElementById('c-email').value.trim(),
     register:fixUrl(document.getElementById('c-register').value.trim()),
-    youtube:fixUrl(document.getElementById('c-youtube').value.trim()),
     facebook:fixUrl(document.getElementById('c-facebook').value.trim()),
     telegramBot:fixUrl(document.getElementById('c-telegramBot').value.trim())
   };
@@ -1652,7 +1684,6 @@ function resetContactLinks(){
     whatsappChannel:'https://whatsapp.com/channel/0029Vab5dpICxoB0C5YXJU0F',
     email:'electronicschoolmg@gmail.com',
     register:'https://forms.gle/tEohTZudiuWHrdTp6',
-    youtube:'#',
     facebook:'https://www.facebook.com/ccischools',
     telegramBot:'https://t.me/CambridgeCityBot'
   };
@@ -1664,6 +1695,16 @@ function saveSettings(){
   DB.settings={name:document.getElementById('set-name').value,nameEn:document.getElementById('set-nameEn').value,abbr:document.getElementById('set-abbr').value,students:document.getElementById('set-students').value,desc:document.getElementById('set-desc').value,schednote:document.getElementById('set-schednote').value};
   save();render();
   alert('✅ تم الحفظ!');
+}
+
+function savePromo(){
+  DB.promo={
+    title:document.getElementById('promo-title').value.trim(),
+    videoUrl:document.getElementById('promo-video').value.trim(),
+    imageUrl:document.getElementById('promo-image').value.trim()
+  };
+  save();render();
+  alert('✅ تم الحفظ! سيظهر القسم في الصفحة الرئيسية إذا أضفت فيديو أو صورة، أو يختفي تلقائياً لو تركته فارغاً.');
 }
 
 function delItem(type,id){
@@ -1678,30 +1719,16 @@ function clearAll(){
 }
 
 function resetToDefaults(){
-  if(!confirm('سيتم استعادة جميع البيانات الافتراضية وكتابتها في Firebase. هل أنت متأكد؟'))return;
+  if(!confirm('سيتم استعادة الإعدادات والهيكل الأساسي (الصفوف، الروابط، خطوات الانضمام) وكتابتها في Firebase. لن يُعاد أي محتوى تجريبي (معلمين/مواد/جدول/امتحانات/أخبار) — هذه تبقى فارغة لتضيفها بنفسك. هل أنت متأكد؟'))return;
   // Reset contact links with correct https:// format
   DB.contact={
     whatsapp:'https://chat.whatsapp.com/LuWucNPNZpVFtRs7VQy',
     whatsappChannel:'https://whatsapp.com/channel/0029Vab5dpICxoB0C5YXJU0F',
     email:'electronicschoolmg@gmail.com',
     register:'https://forms.gle/tEohTZudiuWHrdTp6',
-    youtube:'#',
     facebook:'https://www.facebook.com/ccischools',
     telegramBot:'https://t.me/CambridgeCityBot'
   };
-  DB.bankInfo={
-    bankName:'بنك الخرطوم',
-    accountNumber:'2339762',
-    accountName:'أحمد عبيد محمد',
-    note:'يرجى كتابة اسم الطالب والصف والقسط في خانة التعليق عند التحويل'
-  };
-  if(!Array.isArray(DB.teachers)||!DB.teachers.length){
-    DB.teachers=[
-      {id:1,name:'أ. محمد أحمد',subject:'الرياضيات',icon:'🔢',bio:'خبرة 8 سنوات في تدريس الرياضيات'},
-      {id:2,name:'أ. فاطمة علي',subject:'اللغة العربية',icon:'📖',bio:'متخصصة في تعليم اللغة العربية'},
-      {id:3,name:'أ. خالد إبراهيم',subject:'الفيزياء',icon:'⚡',bio:'معلم فيزياء للمرحلة الثانوية'}
-    ];
-  }
   if(!Array.isArray(DB.howSteps)||!DB.howSteps.length){
     DB.howSteps=[
       {id:1,icon:'📝',title:'١. سجّل حسابك',desc:'سجّل بياناتك واحصل على رابط مجموعتك فوراً'},
@@ -1729,18 +1756,8 @@ function resetToDefaults(){
       {id:12,name:'الصف الثالث الثانوي',level:'secondary',desc:''}
     ];
   }
-  if(!Array.isArray(DB.subjects)||!DB.subjects.length){
-    DB.subjects=[
-      {id:1,name:'الرياضيات',icon:'🔢',classId:1,lessons:24,teacher:'أ. محمد'},
-      {id:2,name:'العلوم',icon:'🧪',classId:1,lessons:18,teacher:'أ. أحمد'},
-      {id:3,name:'اللغة العربية',icon:'📖',classId:1,lessons:20,teacher:'أ. فاطمة'},
-      {id:4,name:'الرياضيات',icon:'🔢',classId:7,lessons:30,teacher:'أ. عمر'},
-      {id:5,name:'الفيزياء',icon:'⚡',classId:10,lessons:28,teacher:'أ. خالد'},
-      {id:6,name:'الكيمياء',icon:'🧬',classId:10,lessons:26,teacher:'أ. سارة'}
-    ];
-  }
   save();render();
-  alert('✅ تم استعادة البيانات الافتراضية وحفظها في Firebase!');
+  alert('✅ تم استعادة الهيكل الأساسي! المعلمون والمواد والجدول والامتحانات والأخبار لا تزال فارغة بانتظار إضافتك لها.');
 }
 
 // ===== ADMIN AUTH (Google Sign-In — real account security) =====
