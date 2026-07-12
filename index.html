@@ -379,6 +379,16 @@ html,body{overflow-x:hidden;max-width:100vw;}
 .admin-section{display:none;}
 .admin-section.active{display:block;}
 
+/* TELEGRAM BOT MODAL */
+.bot-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+.bot-overlay.open{display:flex;}
+.bot-modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:340px;padding:26px 22px;text-align:center;}
+.bot-modal-icon{font-size:42px;margin-bottom:10px;}
+.bot-modal-title{font-size:16px;font-weight:900;color:#fff;margin-bottom:10px;}
+.bot-modal-desc{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+.bot-modal-open{display:block;width:100%;background:linear-gradient(135deg,var(--accent),#0070cc);color:#fff;border:none;padding:11px;border-radius:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;margin-bottom:10px;box-shadow:0 4px 14px rgba(30,144,255,.3);}
+.bot-modal-cancel{background:none;border:none;color:var(--muted);font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer;padding:6px;}
+
 /* FORM */
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .form-group{display:flex;flex-direction:column;gap:5px;}
@@ -829,6 +839,8 @@ html,body{overflow-x:hidden;max-width:100vw;}
           <div class="form-group"><label>رابط استمارة التسجيل</label><input type="text" id="c-register" placeholder="https://forms.gle/..."></div>
           <div class="form-group"><label>فيسبوك</label><input type="text" id="c-facebook" placeholder="https://facebook.com/..."></div>
           <div class="form-group full"><label>🤖 رابط بوت تيليغرام (للأسئلة الآلية)</label><input type="text" id="c-telegramBot" placeholder="https://t.me/YourBot"></div>
+          <div class="form-group full"><label>عنوان نافذة البوت</label><input type="text" id="bot-title" placeholder="المساعد الذكي"></div>
+          <div class="form-group full"><label>وصف نافذة البوت</label><textarea id="bot-desc" placeholder="اسأل عن أي شيء يخص التسجيل..."></textarea></div>
         </div>
         <button class="btn-save" onclick="saveContact()">💾 حفظ</button>
         <button class="btn-edit" onclick="resetContactLinks()" style="background:rgba(0,212,170,.15);color:var(--accent2);border:1px solid rgba(0,212,170,.3);padding:9px 14px;border-radius:7px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">🔄 إعادة ضبط الروابط للقيم الصحيحة</button>
@@ -862,6 +874,17 @@ html,body{overflow-x:hidden;max-width:100vw;}
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- TELEGRAM BOT MODAL -->
+<div class="bot-overlay" id="botOverlay">
+  <div class="bot-modal">
+    <div class="bot-modal-icon">🤖</div>
+    <div class="bot-modal-title" id="botModalTitle">المساعد الذكي</div>
+    <div class="bot-modal-desc" id="botModalDesc">اسأل عن أي شيء يخص التسجيل، الرسوم، أو الجدول واحصل على رد فوري</div>
+    <a class="bot-modal-open" id="botModalOpenLink" href="#" target="_blank" onclick="closeBotModal()">💬 فتح المحادثة الآن</a>
+    <button class="bot-modal-cancel" onclick="closeBotModal()">إلغاء</button>
   </div>
 </div>
 
@@ -908,6 +931,7 @@ let DB = {
     {id:4,icon:'✅',title:'٤. أدِّ الامتحان',desc:'امتحانات إلكترونية مع نتيجة فورية'}
   ],
   promo:{videoUrl:'',imageUrl:'',title:''},
+  botModal:{title:'المساعد الذكي',desc:'اسأل عن أي شيء يخص التسجيل، الرسوم، أو الجدول واحصل على رد فوري'},
   settings:{name:'مدارس كامبردج سيتي العالمية - القسم العربي',nameEn:'E-SCHOOL',abbr:'CCI',students:'500',desc:'مدرسة إلكترونية متكاملة معتمدة من وزارة التربية والتعليم — تقدم تعليماً عالي الجودة عبر الإنترنت.',schednote:'التوقيت UTC+3'}
 };
 
@@ -1133,6 +1157,7 @@ function safeDB(){
   if(!DB.contact) DB.contact={};
   if(!DB.bankInfo) DB.bankInfo={};
   if(!DB.promo) DB.promo={videoUrl:'',imageUrl:'',title:''};
+  if(!DB.botModal) DB.botModal={title:'المساعد الذكي',desc:'اسأل عن أي شيء يخص التسجيل، الرسوم، أو الجدول واحصل على رد فوري'};
   if(!DB.settings) DB.settings={name:'المدرسة الإلكترونية',abbr:'ES',students:'500',desc:'',schednote:'UTC+3'};
   if(!DB.ticker) DB.ticker='';
 }
@@ -1434,7 +1459,7 @@ function renderContact(){
     <div class="cont-card"><div class="cont-icon">📢</div><h4>قناة واتساب</h4><p>آخر الإعلانات الرسمية</p><a href="${c.whatsappChannel||'#'}" class="cont-link" target="_blank">متابعة</a></div>
     <div class="cont-card"><div class="cont-icon">📋</div><h4>التسجيل</h4><p>سجّل بياناتك الآن</p><a href="${c.register||'#'}" class="cont-link" target="_blank">التسجيل</a></div>
     <div class="cont-card"><div class="cont-icon">📘</div><h4>فيسبوك</h4><p>صفحتنا الرسمية</p><a href="${c.facebook||'#'}" class="cont-link" target="_blank">متابعة</a></div>
-    <div class="cont-card"><div class="cont-icon">🤖</div><h4>بوت الأسئلة الآلي</h4><p>إجابات فورية على استفساراتك</p><a href="${c.telegramBot||'#'}" class="cont-link" target="_blank">فتح البوت</a></div>
+    <div class="cont-card"><div class="cont-icon">🤖</div><h4>بوت الأسئلة الآلي</h4><p>إجابات فورية على استفساراتك</p><a href="javascript:void(0)" class="cont-link" onclick="openBotModal();return false;">فتح البوت</a></div>
     <div class="cont-card"><div class="cont-icon">📧</div><h4>البريد</h4><p>${c.email||'—'}</p><a href="mailto:${c.email}" class="cont-link">إرسال</a></div>`;
   document.getElementById('c-whatsapp').value=c.whatsapp||'';
   document.getElementById('c-whatsappChannel').value=c.whatsappChannel||'';
@@ -1442,6 +1467,11 @@ function renderContact(){
   document.getElementById('c-register').value=c.register||'';
   document.getElementById('c-facebook').value=c.facebook||'';
   document.getElementById('c-telegramBot').value=c.telegramBot||'';
+  const bm=DB.botModal||{};
+  document.getElementById('botModalTitle').textContent=bm.title||'المساعد الذكي';
+  document.getElementById('botModalDesc').textContent=bm.desc||'اسأل عن أي شيء يخص التسجيل، الرسوم، أو الجدول واحصل على رد فوري';
+  document.getElementById('bot-title').value=bm.title||'';
+  document.getElementById('bot-desc').value=bm.desc||'';
 }
 
 function renderSettings(){
@@ -1674,6 +1704,10 @@ function saveContact(){
     facebook:fixUrl(document.getElementById('c-facebook').value.trim()),
     telegramBot:fixUrl(document.getElementById('c-telegramBot').value.trim())
   };
+  DB.botModal={
+    title:document.getElementById('bot-title').value.trim()||'المساعد الذكي',
+    desc:document.getElementById('bot-desc').value.trim()||'اسأل عن أي شيء يخص التسجيل، الرسوم، أو الجدول واحصل على رد فوري'
+  };
   save();render();alert('✅ تم الحفظ!');
 }
 
@@ -1853,6 +1887,21 @@ function openRegisterLink(){
   }
   window.open(link, '_blank');
 }
+
+function openBotModal(){
+  const link = (DB.contact && DB.contact.telegramBot) ? DB.contact.telegramBot : '';
+  if(!link || link==='#'){
+    alert('🤖 رابط البوت لم يُضف بعد — تواصل مع إدارة المدرسة');
+    return;
+  }
+  document.getElementById('botModalOpenLink').href = link;
+  document.getElementById('botOverlay').classList.add('open');
+}
+function closeBotModal(){
+  document.getElementById('botOverlay').classList.remove('open');
+}
+document.getElementById('botOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeBotModal();});
+
 document.getElementById('adminOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAdmin();});
 
 let isDark=true;
